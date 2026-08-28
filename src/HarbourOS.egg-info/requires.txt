@@ -1,0 +1,17 @@
+duckdb>=1.0.0
+duckdb[httpfs,json,parquet,spatial]>=1.0.0
+pandas>=2.0
+requests>=2.31
+python-dotenv>=1.0
+pydantic>=2.0
+
+[dev]
+pytest>=7.0
+pytest-cov>=4.0
+black>=23.0
+ruff>=0.1
+mypy>=1.0
+pre-commit>=3.0
+dagster>=1.5
+dbt-core>=1.5
+dbt-duckdb>=1.5

@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: HarbourOS
+Version: 0.1.0
+Summary: Norwegian maritime AIS port-call intelligence platform
+Requires-Python: >=3.11
+Requires-Dist: duckdb>=1.0.0
+Requires-Dist: duckdb[httpfs,json,parquet,spatial]>=1.0.0
+Requires-Dist: pandas>=2.0
+Requires-Dist: requests>=2.31
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: pydantic>=2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: ruff>=0.1; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: pre-commit>=3.0; extra == "dev"
+Requires-Dist: dagster>=1.5; extra == "dev"
+Requires-Dist: dbt-core>=1.5; extra == "dev"
+Requires-Dist: dbt-duckdb>=1.5; extra == "dev"
