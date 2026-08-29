@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "HarbourOS"
 version = "0.1.0"
 description = "Norwegian maritime AIS port-call intelligence platform"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.0.0",
     "duckdb[json,httpfs,spatial,parquet]>=1.0.0",
@@ -38,15 +38,21 @@ addopts = "--cov=src/HarbourOS --cov-report=term-missing"
 
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py312']
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 select = ["E", "F", "W", "I"]
 
 [tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
+python_version = "3.14"
+explicit_package_bases = true
+mypy_path = "src"
+exclude = [
+    '\.egg-info',
+    'build',
+    'dist',
+    '\.venv',
+    'venv',
+]
