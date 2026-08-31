@@ -2,7 +2,7 @@ from pathlib import Path
 
 import duckdb
 
-# database file location defined
+# DuckDB database file location defined
 DB_PATH = Path("data/ais_bronze.duckdb")
 
 
