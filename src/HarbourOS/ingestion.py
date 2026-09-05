@@ -10,12 +10,10 @@ load_dotenv()
 
 def get_access_token():
     """Get a fresh access token from BarentsWatch"""
-
     client_id = os.getenv("BARENTSWATCH_CLIENT_ID")
     client_secret = os.getenv("BARENTSWATCH_CLIENT_SECRET")
 
     token_url = "https://id.barentswatch.no/connect/token"
-
     response = requests.post(
         token_url,
         data={
@@ -25,7 +23,6 @@ def get_access_token():
             "scope": "ais",
         },
     )
-
     if response.status_code != 200:
         raise Exception(f"Failed to get token: {response.text}")
 
@@ -35,15 +32,11 @@ def get_access_token():
 
 def fetch_ais_data(limit=100):
     """Fetch latest AIS positions from BarentsWatch API"""
-
     access_token = get_access_token()
-
     api_url = "https://live.ais.barentswatch.no/v1/latest/combined"
-
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.get(api_url, headers=headers)
-
     print(f"API Status: {response.status_code}")
 
     if response.status_code != 200:
@@ -51,28 +44,44 @@ def fetch_ais_data(limit=100):
         print(response.text)
         return []
 
-    # Parsing the JSON response
     data = response.json()
-
-    # The response is already a list of positions
-    # If limit is specified, take only the first 'limit' items
     if isinstance(data, list):
-        positions = data[:limit]  # Take only first 'limit' vessels
+        positions = data[:limit]
     else:
         positions = []
 
     return positions
 
 
+def fetch_historic_track(mmsi):
+    """Fetch the last 24 hours of position history for one ship.
+
+    Used for backfilling real, dense position data -- live polling only
+    captures one snapshot per run, which isn't enough to see a full
+    port-call journey unfold.
+    """
+    access_token = get_access_token()
+    api_url = f"https://historic.ais.barentswatch.no/v1/historic/trackslast24hours/{mmsi}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    response = requests.get(api_url, headers=headers)
+    if response.status_code != 200:
+        print(f"Error fetching historic track for {mmsi}: {response.status_code}")
+        print(response.text)
+        return []
+
+    data = response.json()
+    if isinstance(data, list):
+        return data
+    return []
+
+
 def ingest_batch(limit=100):
     """Fetch and store a batch of AIS messages"""
-
     print(f"Fetching up to {limit} AIS positions...")
     positions = fetch_ais_data(limit=limit)
-
     print(f"Received {len(positions)} positions")
 
-    # Store each position in the database
     for position in positions:
         try:
             insert_ais_message(position)
