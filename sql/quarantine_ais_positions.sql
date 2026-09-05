@@ -18,9 +18,9 @@ flagged AS (
             WHEN row_num != 1 THEN 'duplicate'
             WHEN mmsi IS NULL THEN 'null_mmsi'
             WHEN mmsi NOT BETWEEN 100000000 AND 999999999 THEN 'invalid_mmsi_range'
-            WHEN latitude NOT BETWEEN -90 AND 90 THEN 'invalid_latitude'
-            WHEN longitude NOT BETWEEN -180 AND 180 THEN 'invalid_longitude'
-            WHEN speedOverGround NOT BETWEEN 0 AND 102.2 THEN 'invalid_speed'
+            WHEN latitude IS NULL OR latitude NOT BETWEEN -90 AND 90 THEN 'invalid_latitude'
+            WHEN longitude IS NULL OR longitude NOT BETWEEN -180 AND 180 THEN 'invalid_longitude'
+            WHEN speedOverGround IS NULL OR speedOverGround NOT BETWEEN 0 AND 102.2 THEN 'invalid_speed'
             WHEN msgtime IS NULL THEN 'null_msgtime'
             WHEN msgtime > CURRENT_TIMESTAMP THEN 'future_timestamp'
             ELSE NULL

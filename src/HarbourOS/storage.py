@@ -6,14 +6,10 @@ import duckdb
 DB_PATH = Path("data/ais_bronze.duckdb")
 
 
-def initialize_bronze_table():
+def initialize_bronze_table(db_path: Path = DB_PATH) -> None:
     """Create the Bronze layer table in DuckDB"""
-
-    # DuckDB database connection
-    conn = duckdb.connect(str(DB_PATH))
-
+    conn = duckdb.connect(str(db_path))
     conn.execute("DROP TABLE IF EXISTS ais_messages_bronze")
-
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS ais_messages_bronze (
@@ -33,16 +29,13 @@ def initialize_bronze_table():
         )
     """
     )
-
     conn.close()
-    print(f"✅ Database initialized: {DB_PATH}")
+    print(f"✅ Database initialized: {db_path}")
 
 
-def insert_ais_message(data):
+def insert_ais_message(data: dict, db_path: Path = DB_PATH) -> None:
     """Insert a single AIS message into the database"""
-
-    conn = duckdb.connect(str(DB_PATH))
-
+    conn = duckdb.connect(str(db_path))
     conn.execute(
         """
         INSERT INTO ais_messages_bronze
@@ -65,7 +58,6 @@ def insert_ais_message(data):
             data.get("msgtime"),
         ],
     )
-
     conn.close()
 
 

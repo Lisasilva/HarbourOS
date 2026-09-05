@@ -14,10 +14,9 @@ def run_sql_file(con: duckdb.DuckDBPyConnection, filename: str) -> None:
     con.execute(sql)
 
 
-def run_silver_transform() -> None:
+def run_silver_transform(db_path: Path = DB_PATH) -> None:
     """Build the Silver and Quarantine tables from Bronze, then report the results."""
-    con = duckdb.connect(str(DB_PATH))
-
+    con = duckdb.connect(str(db_path))
     bronze_count = con.sql("SELECT COUNT(*) FROM ais_messages_bronze").fetchone()[0]
 
     run_sql_file(con, "silver_ais_positions.sql")
