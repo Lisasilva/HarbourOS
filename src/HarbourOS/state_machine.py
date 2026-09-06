@@ -166,6 +166,9 @@ def _denoise(runs: list[_Run]) -> list[_Run]:
         joinable = bool(kept) and (run.start - kept[-1].end) <= MAX_GAP
 
         if too_short and not joinable:
+            if pending and (run.start - pending[-1].end) > MAX_GAP:
+                kept.extend(pending)
+                pending = []
             pending.append(run)
             continue
         if too_short:

@@ -109,5 +109,60 @@ def insert_state_periods(periods: list, db_path: Path = DB_PATH) -> None:
     conn.close()
 
 
+def initialize_port_calls_table(db_path: Path = DB_PATH) -> None:
+    """Create the port-call event table (full refresh, like the other layers)."""
+    conn = duckdb.connect(str(db_path))
+    conn.execute("DROP TABLE IF EXISTS port_call_events")
+    conn.execute(
+        """
+        CREATE TABLE port_call_events (
+            mmsi INTEGER,
+            stop_type VARCHAR,
+            arrival_time TIMESTAMP,
+            berth_start TIMESTAMP,
+            berth_end TIMESTAMP,
+            departure_time TIMESTAMP,
+            minutes_alongside INTEGER,
+            n_readings INTEGER,
+            confidence DECIMAL(3, 2),
+            completeness VARCHAR
+        )
+    """
+    )
+    conn.close()
+
+
+def insert_port_calls(calls: list, db_path: Path = DB_PATH) -> None:
+    """Bulk-insert port-call events."""
+    if not calls:
+        return
+
+    conn = duckdb.connect(str(db_path))
+    conn.executemany(
+        """
+        INSERT INTO port_call_events
+        (mmsi, stop_type, arrival_time, berth_start, berth_end, departure_time,
+         minutes_alongside, n_readings, confidence, completeness)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """,
+        [
+            [
+                call.mmsi,
+                call.stop_type,
+                call.arrival_time,
+                call.berth_start,
+                call.berth_end,
+                call.departure_time,
+                call.minutes_alongside,
+                call.n_readings,
+                call.confidence,
+                call.completeness,
+            ]
+            for call in calls
+        ],
+    )
+    conn.close()
+
+
 if __name__ == "__main__":
     initialize_bronze_table()

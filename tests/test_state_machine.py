@@ -103,3 +103,34 @@ def test_every_reading_is_accounted_for():
     messages = journey((1, 0.0, 5), (10, 12.0, 0), (1, 0.0, 0), (10, 0.0, 5))
     periods = derive_state_periods(messages, mmsi=SHIP)
     assert sum(p.n_readings for p in periods) == len(messages)
+
+
+def test_isolated_readings_days_apart_do_not_merge_into_one_period():
+    """Two lonely pings two days apart are two observations, not one long stop."""
+    messages = [
+        {"message_time": START, "speed_over_ground": 0.0, "navigational_status": 5},
+        {
+            "message_time": START + timedelta(days=2),
+            "speed_over_ground": 0.0,
+            "navigational_status": 5,
+        },
+    ]
+    assert len(derive_state_periods(messages, mmsi=SHIP)) == 2
+
+
+def test_a_stray_ping_days_earlier_does_not_stretch_a_later_period():
+    """A ping from Monday must not back-date a stop that really began Wednesday."""
+    messages = [{"message_time": START, "speed_over_ground": 0.0, "navigational_status": 5}]
+    dense_start = START + timedelta(days=2)
+    for index in range(10):
+        messages.append(
+            {
+                "message_time": dense_start + timedelta(minutes=index),
+                "speed_over_ground": 0.0,
+                "navigational_status": 5,
+            }
+        )
+
+    periods = derive_state_periods(messages, mmsi=SHIP)
+    assert len(periods) == 2
+    assert periods[1].start_time == dense_start
