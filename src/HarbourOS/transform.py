@@ -4,6 +4,9 @@ from pathlib import Path
 
 import duckdb
 
+from HarbourOS.state_machine import derive_state_periods
+from HarbourOS.storage import initialize_state_periods_table, insert_state_periods
+
 DB_PATH = Path("data/ais_bronze.duckdb")
 SQL_DIR = Path("sql")
 
@@ -41,5 +44,48 @@ def run_silver_transform(db_path: Path = DB_PATH) -> None:
     con.close()
 
 
+def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
+    """Derive confidence-scored state periods for every ship in Silver."""
+    con = duckdb.connect(str(db_path))
+    mmsi_list = [
+        row[0]
+        for row in con.sql("SELECT DISTINCT mmsi FROM ais_messages_silver ORDER BY mmsi").fetchall()
+    ]
+
+    all_periods = []
+    readings_seen = 0
+    for mmsi in mmsi_list:
+        rows = con.sql(
+            f"""
+            SELECT message_time, speed_over_ground, navigational_status
+            FROM ais_messages_silver
+            WHERE mmsi = {mmsi}
+            ORDER BY message_time
+            """
+        ).fetchall()
+        messages = [
+            {
+                "message_time": row[0],
+                "speed_over_ground": row[1],
+                "navigational_status": row[2],
+            }
+            for row in rows
+        ]
+        readings_seen += len(messages)
+        all_periods.extend(derive_state_periods(messages, mmsi=mmsi))
+    con.close()
+
+    initialize_state_periods_table(db_path=db_path)
+    insert_state_periods(all_periods, db_path=db_path)
+
+    covered = sum(period.n_readings for period in all_periods)
+    print(f"Ships processed:  {len(mmsi_list)}")
+    print(f"Silver readings:  {readings_seen}")
+    print(f"State periods:    {len(all_periods)}")
+    print(f"Readings covered: {covered} (should equal Silver readings)")
+
+
 if __name__ == "__main__":
     run_silver_transform()
+    print()
+    run_state_periods_transform()

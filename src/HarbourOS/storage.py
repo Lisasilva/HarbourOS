@@ -61,5 +61,53 @@ def insert_ais_message(data: dict, db_path: Path = DB_PATH) -> None:
     conn.close()
 
 
+def initialize_state_periods_table(db_path: Path = DB_PATH) -> None:
+    """Create the derived state-period table (full refresh, like Silver)."""
+    conn = duckdb.connect(str(db_path))
+    conn.execute("DROP TABLE IF EXISTS ship_state_periods")
+    conn.execute(
+        """
+        CREATE TABLE ship_state_periods (
+            mmsi INTEGER,
+            state VARCHAR,
+            start_time TIMESTAMP,
+            end_time TIMESTAMP,
+            n_readings INTEGER,
+            confidence DECIMAL(3, 2),
+            note VARCHAR
+        )
+    """
+    )
+    conn.close()
+
+
+def insert_state_periods(periods: list, db_path: Path = DB_PATH) -> None:
+    """Bulk-insert derived state periods."""
+    if not periods:
+        return
+
+    conn = duckdb.connect(str(db_path))
+    conn.executemany(
+        """
+        INSERT INTO ship_state_periods
+        (mmsi, state, start_time, end_time, n_readings, confidence, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """,
+        [
+            [
+                period.mmsi,
+                period.state,
+                period.start_time,
+                period.end_time,
+                period.n_readings,
+                period.confidence,
+                period.note,
+            ]
+            for period in periods
+        ],
+    )
+    conn.close()
+
+
 if __name__ == "__main__":
     initialize_bronze_table()
