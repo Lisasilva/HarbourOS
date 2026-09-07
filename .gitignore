@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .coverage
 *.egg-info/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml

@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: harbouros
+    description: >
+      Tables produced by the Python pipeline. dbt reads these but never
+      writes them -- the sequential state logic upstream is not expressible
+      in SQL, so it stays in Python.
+    schema: main
+    tables:
+      - name: ais_messages_silver
+      - name: ship_state_periods
+      - name: port_call_events

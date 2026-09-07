@@ -1,0 +1,7 @@
+harbouros:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../data/ais_bronze.duckdb"
+      threads: 4

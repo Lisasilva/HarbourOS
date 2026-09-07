@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: dim_port
+    description: Norwegian seaports from UN/LOCODE, positions in decimal degrees.
+    columns:
+      - name: port_locode
+        description: UN/LOCODE business key, e.g. NOBGO for Bergen.
+        tests: [unique, not_null]
+      - name: latitude
+        tests: [not_null]
+      - name: longitude
+        tests: [not_null]
+
+  - name: dim_vessel
+    description: One row per vessel observed, with its most recently reported name.
+    columns:
+      - name: mmsi
+        tests: [unique, not_null]
+
+  - name: dim_date
+    description: Calendar covering exactly the days observed in the AIS data.
+    columns:
+      - name: date_key
+        tests: [unique, not_null]
+
+  - name: fact_port_call
+    description: >
+      One row per port call. Grain: one vessel stopping once. A null
+      port_locode means no known seaport lay within the match radius --
+      recorded honestly rather than guessed.
+    columns:
+      - name: port_call_key
+        tests: [unique, not_null]
+      - name: mmsi
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vessel')
+                field: mmsi
+      - name: port_locode
+        tests:
+          - relationships:
+            arguments:
+                to: ref('dim_port')
+                field: port_locode
+      - name: arrival_date_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: stop_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["berthed", "anchored"]
+      - name: completeness
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - complete
+                  - arrival_unobserved
+                  - departure_unobserved
+                  - both_unobserved
+      - name: minutes_alongside
+        tests: [not_null]
+      - name: confidence
+        tests: [not_null]
