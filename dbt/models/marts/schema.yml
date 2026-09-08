@@ -42,7 +42,7 @@ models:
       - name: port_locode
         tests:
           - relationships:
-            arguments:
+              arguments:
                 to: ref('dim_port')
                 field: port_locode
       - name: arrival_date_key

@@ -9,25 +9,23 @@ description = "Norwegian maritime AIS port-call intelligence platform"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.0.0",
-    "duckdb[json,httpfs,spatial,parquet]>=1.0.0",
     "pandas>=2.0",
     "requests>=2.31",
     "python-dotenv>=1.0",
     "pydantic>=2.0",
     "dbt-duckdb>=1.11.0",
+    "dagster>=1.13.20",
+    "dagster-webserver>=1.13.20",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "black>=23.0",
     "ruff>=0.1",
     "mypy>=1.0",
-    "pre-commit>=3.0",
-    "dagster>=1.5",
-    "dbt-core>=1.5",
-    "dbt-duckdb>=1.5",
+    "pre-commit>=3.0"
 ]
 
 [tool.setuptools.packages.find]
@@ -57,3 +55,8 @@ exclude = [
     '\.venv',
     'venv',
 ]
+
+[[tool.mypy.overrides]]
+module = "dagster"
+follow_imports = "skip"
+ignore_missing_imports = true
