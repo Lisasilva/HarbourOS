@@ -3,7 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from HarbourOS.storage import insert_ais_message
+from HarbourOS.storage import insert_ais_messages
 
 load_dotenv()
 
@@ -77,19 +77,14 @@ def fetch_historic_track(mmsi):
 
 
 def ingest_batch(limit=100):
-    """Fetch and store a batch of AIS messages"""
+    """Fetch and store a batch of AIS messages in one database write."""
     print(f"Fetching up to {limit} AIS positions...")
     positions = fetch_ais_data(limit=limit)
     print(f"Received {len(positions)} positions")
 
-    for position in positions:
-        try:
-            insert_ais_message(position)
-        except Exception as e:
-            print(f"Error inserting position: {e}")
-            continue
-
-    print(f"✅ Stored {len(positions)} messages in Bronze layer")
+    stored = insert_ais_messages(positions)
+    print(f"✅ Stored {stored} messages in Bronze layer")
+    return stored
 
 
 if __name__ == "__main__":

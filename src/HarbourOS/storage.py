@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 import duckdb
@@ -9,7 +10,6 @@ DB_PATH = Path("data/ais_bronze.duckdb")
 def initialize_bronze_table(db_path: Path = DB_PATH) -> None:
     """Create the Bronze layer table in DuckDB"""
     conn = duckdb.connect(str(db_path))
-    conn.execute("DROP TABLE IF EXISTS ais_messages_bronze")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS ais_messages_bronze (
@@ -166,3 +166,53 @@ def insert_port_calls(calls: list, db_path: Path = DB_PATH) -> None:
 
 if __name__ == "__main__":
     initialize_bronze_table()
+
+
+def insert_ais_messages(messages: list[dict], db_path: Path = DB_PATH) -> int:
+    """Insert a whole batch of AIS messages in a single database write.
+
+    Every row in the batch gets the SAME received_at, set here in Python rather
+    than left to the column default. That makes a batch identifiable as one unit
+    of work, which is what the incremental transforms use to find rows they have
+    not processed yet.
+    """
+    if not messages:
+        return 0
+
+    received_at = datetime.now()
+
+    rows = [
+        [
+            message.get("mmsi"),
+            message.get("name"),
+            message.get("latitude"),
+            message.get("longitude"),
+            message.get("speedOverGround"),
+            message.get("courseOverGround"),
+            message.get("trueHeading"),
+            message.get("rateOfTurn"),
+            message.get("shipType"),
+            message.get("navigationalStatus"),
+            message.get("stream"),
+            message.get("msgtime"),
+            received_at,
+        ]
+        for message in messages
+    ]
+
+    conn = duckdb.connect(str(db_path))
+    try:
+        conn.executemany(
+            """
+            INSERT INTO ais_messages_bronze
+            (mmsi, name, latitude, longitude, speedOverGround, courseOverGround,
+             trueHeading, rateOfTurn, shipType, navigationalStatus, stream, msgtime,
+             received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+    finally:
+        conn.close()
+
+    return len(rows)
