@@ -8,6 +8,7 @@ from HarbourOS.port_calls import derive_port_calls
 from HarbourOS.state_machine import StatePeriod, derive_state_periods
 from HarbourOS.storage import (
     initialize_port_calls_table,
+    initialize_silver_tables,
     initialize_state_periods_table,
     insert_port_calls,
     insert_state_periods,
@@ -24,20 +25,31 @@ def run_sql_file(con: duckdb.DuckDBPyConnection, filename: str) -> None:
 
 
 def run_silver_transform(db_path: Path = DB_PATH) -> None:
-    """Build the Silver and Quarantine tables from Bronze, then report results."""
+    """Add newly-arrived Bronze rows to Silver and Quarantine.
+
+    Incremental: only Bronze rows received later than the newest row already in
+    Silver or Quarantine are considered. That high-water mark is read straight
+    from the data, so there is no bookkeeping table to fall out of sync.
+    """
+    initialize_silver_tables(db_path=db_path)
+
     con = duckdb.connect(str(db_path))
+
+    run_sql_file(con, "silver_stage_new_batch.sql")
+    new_rows = con.sql("SELECT COUNT(*) FROM new_bronze_batch").fetchone()[0]
+
+    run_sql_file(con, "silver_insert_accepted.sql")
+    run_sql_file(con, "silver_insert_rejected.sql")
+
     bronze_count = con.sql("SELECT COUNT(*) FROM ais_messages_bronze").fetchone()[0]
-
-    run_sql_file(con, "silver_ais_positions.sql")
-    run_sql_file(con, "quarantine_ais_positions.sql")
-
     silver_count = con.sql("SELECT COUNT(*) FROM ais_messages_silver").fetchone()[0]
     quarantine_count = con.sql("SELECT COUNT(*) FROM ais_messages_quarantine").fetchone()[0]
 
+    print(f"New rows this run: {new_rows}")
     print(f"Bronze rows:      {bronze_count}")
     print(f"Silver rows:      {silver_count}")
     print(f"Quarantine rows:  {quarantine_count}")
-    print(f"Accounted for:    {silver_count + quarantine_count} " f"(should equal Bronze rows)")
+    print(f"Accounted for:    {silver_count + quarantine_count} (should equal Bronze rows)")
 
     print("\nQuarantine breakdown by reason:")
     breakdown = con.sql(
@@ -48,6 +60,13 @@ def run_silver_transform(db_path: Path = DB_PATH) -> None:
         print(f"  {reason}: {count}")
 
     con.close()
+
+    if silver_count + quarantine_count != bronze_count:
+        raise ValueError(
+            "Rows went missing: "
+            f"Silver {silver_count} + Quarantine {quarantine_count} "
+            f"= {silver_count + quarantine_count}, but Bronze has {bronze_count}"
+        )
 
 
 def run_state_periods_transform(db_path: Path = DB_PATH) -> None:

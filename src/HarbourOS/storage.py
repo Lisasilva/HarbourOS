@@ -216,3 +216,42 @@ def insert_ais_messages(messages: list[dict], db_path: Path = DB_PATH) -> int:
         conn.close()
 
     return len(rows)
+
+
+def initialize_silver_tables(db_path: Path = DB_PATH) -> None:
+    """Create empty Silver and Quarantine tables if they don't exist yet.
+
+    Their shape is taken from Bronze with 'WHERE FALSE' rather than hand-written
+    DDL, so the empty table can never disagree with the query that fills it.
+    """
+    conn = duckdb.connect(str(db_path))
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ais_messages_silver AS
+        SELECT
+            mmsi,
+            name,
+            latitude,
+            longitude,
+            speedOverGround     AS speed_over_ground,
+            courseOverGround    AS course_over_ground,
+            trueHeading         AS true_heading,
+            rateOfTurn          AS rate_of_turn,
+            shipType            AS ship_type,
+            navigationalStatus  AS navigational_status,
+            stream,
+            msgtime             AS message_time,
+            received_at
+        FROM ais_messages_bronze
+        WHERE FALSE
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ais_messages_quarantine AS
+        SELECT b.*, CAST(NULL AS VARCHAR) AS rejection_reason
+        FROM ais_messages_bronze AS b
+        WHERE FALSE
+        """
+    )
+    conn.close()
