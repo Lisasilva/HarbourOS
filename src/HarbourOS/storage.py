@@ -7,6 +7,11 @@ import duckdb
 DB_PATH = Path("data/ais_bronze.duckdb")
 
 
+# ---------------------------------------------------------------------------
+# Bronze
+# ---------------------------------------------------------------------------
+
+
 def initialize_bronze_table(db_path: Path = DB_PATH) -> None:
     """Create the Bronze layer table in DuckDB"""
     conn = duckdb.connect(str(db_path))
@@ -61,113 +66,6 @@ def insert_ais_message(data: dict, db_path: Path = DB_PATH) -> None:
     conn.close()
 
 
-def initialize_state_periods_table(db_path: Path = DB_PATH) -> None:
-    """Create the derived state-period table (full refresh, like Silver)."""
-    conn = duckdb.connect(str(db_path))
-    conn.execute("DROP TABLE IF EXISTS ship_state_periods")
-    conn.execute(
-        """
-        CREATE TABLE ship_state_periods (
-            mmsi INTEGER,
-            state VARCHAR,
-            start_time TIMESTAMP,
-            end_time TIMESTAMP,
-            n_readings INTEGER,
-            confidence DECIMAL(3, 2),
-            note VARCHAR
-        )
-    """
-    )
-    conn.close()
-
-
-def insert_state_periods(periods: list, db_path: Path = DB_PATH) -> None:
-    """Bulk-insert derived state periods."""
-    if not periods:
-        return
-
-    conn = duckdb.connect(str(db_path))
-    conn.executemany(
-        """
-        INSERT INTO ship_state_periods
-        (mmsi, state, start_time, end_time, n_readings, confidence, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """,
-        [
-            [
-                period.mmsi,
-                period.state,
-                period.start_time,
-                period.end_time,
-                period.n_readings,
-                period.confidence,
-                period.note,
-            ]
-            for period in periods
-        ],
-    )
-    conn.close()
-
-
-def initialize_port_calls_table(db_path: Path = DB_PATH) -> None:
-    """Create the port-call event table (full refresh, like the other layers)."""
-    conn = duckdb.connect(str(db_path))
-    conn.execute("DROP TABLE IF EXISTS port_call_events")
-    conn.execute(
-        """
-        CREATE TABLE port_call_events (
-            mmsi INTEGER,
-            stop_type VARCHAR,
-            arrival_time TIMESTAMP,
-            berth_start TIMESTAMP,
-            berth_end TIMESTAMP,
-            departure_time TIMESTAMP,
-            minutes_alongside INTEGER,
-            n_readings INTEGER,
-            confidence DECIMAL(3, 2),
-            completeness VARCHAR
-        )
-    """
-    )
-    conn.close()
-
-
-def insert_port_calls(calls: list, db_path: Path = DB_PATH) -> None:
-    """Bulk-insert port-call events."""
-    if not calls:
-        return
-
-    conn = duckdb.connect(str(db_path))
-    conn.executemany(
-        """
-        INSERT INTO port_call_events
-        (mmsi, stop_type, arrival_time, berth_start, berth_end, departure_time,
-         minutes_alongside, n_readings, confidence, completeness)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """,
-        [
-            [
-                call.mmsi,
-                call.stop_type,
-                call.arrival_time,
-                call.berth_start,
-                call.berth_end,
-                call.departure_time,
-                call.minutes_alongside,
-                call.n_readings,
-                call.confidence,
-                call.completeness,
-            ]
-            for call in calls
-        ],
-    )
-    conn.close()
-
-
-if __name__ == "__main__":
-    initialize_bronze_table()
-
-
 def insert_ais_messages(messages: list[dict], db_path: Path = DB_PATH) -> int:
     """Insert a whole batch of AIS messages in a single database write.
 
@@ -218,6 +116,11 @@ def insert_ais_messages(messages: list[dict], db_path: Path = DB_PATH) -> int:
     return len(rows)
 
 
+# ---------------------------------------------------------------------------
+# Silver
+# ---------------------------------------------------------------------------
+
+
 def initialize_silver_tables(db_path: Path = DB_PATH) -> None:
     """Create empty Silver and Quarantine tables if they don't exist yet.
 
@@ -255,3 +158,189 @@ def initialize_silver_tables(db_path: Path = DB_PATH) -> None:
         """
     )
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Progress bookkeeping for the per-vessel layers
+# ---------------------------------------------------------------------------
+
+
+def initialize_progress_table(db_path: Path = DB_PATH) -> None:
+    """Create the table that records how far each derived layer has been built.
+
+    One row per (layer, ship). Silver needs no such table -- its high-water mark
+    is derivable, because every Bronze row produces a row somewhere. The vessel
+    layers do need it, because a ship can legitimately produce no port calls at
+    all, so 'no rows for this ship' is not evidence the ship was never processed.
+    """
+    conn = duckdb.connect(str(db_path))
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS derived_progress (
+            layer VARCHAR,
+            mmsi INTEGER,
+            built_from_received_at TIMESTAMP
+        )
+    """
+    )
+    conn.close()
+
+
+def record_progress(
+    layer: str,
+    watermarks: dict[int, datetime],
+    db_path: Path = DB_PATH,
+) -> None:
+    """Record, for each ship just processed, the newest input it was built from."""
+    if not watermarks:
+        return
+
+    conn = duckdb.connect(str(db_path))
+    placeholders = ", ".join("?" for _ in watermarks)
+    conn.execute(
+        f"DELETE FROM derived_progress WHERE layer = ? AND mmsi IN ({placeholders})",
+        [layer, *watermarks.keys()],
+    )
+    conn.executemany(
+        """
+        INSERT INTO derived_progress (layer, mmsi, built_from_received_at)
+        VALUES (?, ?, ?)
+        """,
+        [[layer, mmsi, built_from] for mmsi, built_from in watermarks.items()],
+    )
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# State periods
+# ---------------------------------------------------------------------------
+
+
+def initialize_state_periods_table(db_path: Path = DB_PATH) -> None:
+    """Create the derived state-period table if it doesn't exist yet."""
+    conn = duckdb.connect(str(db_path))
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ship_state_periods (
+            mmsi INTEGER,
+            state VARCHAR,
+            start_time TIMESTAMP,
+            end_time TIMESTAMP,
+            n_readings INTEGER,
+            confidence DECIMAL(3, 2),
+            note VARCHAR
+        )
+    """
+    )
+    conn.close()
+
+
+def replace_state_periods_for_ships(
+    periods: list,
+    mmsi_list: list[int],
+    db_path: Path = DB_PATH,
+) -> None:
+    """Swap in freshly derived periods for the named ships, leaving others alone."""
+    if not mmsi_list:
+        return
+
+    conn = duckdb.connect(str(db_path))
+    placeholders = ", ".join("?" for _ in mmsi_list)
+    conn.execute(
+        f"DELETE FROM ship_state_periods WHERE mmsi IN ({placeholders})",
+        list(mmsi_list),
+    )
+    if periods:
+        conn.executemany(
+            """
+            INSERT INTO ship_state_periods
+            (mmsi, state, start_time, end_time, n_readings, confidence, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                [
+                    period.mmsi,
+                    period.state,
+                    period.start_time,
+                    period.end_time,
+                    period.n_readings,
+                    period.confidence,
+                    period.note,
+                ]
+                for period in periods
+            ],
+        )
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Port calls
+# ---------------------------------------------------------------------------
+
+
+def initialize_port_calls_table(db_path: Path = DB_PATH) -> None:
+    """Create the port-call event table if it doesn't exist yet."""
+    conn = duckdb.connect(str(db_path))
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS port_call_events (
+            mmsi INTEGER,
+            stop_type VARCHAR,
+            arrival_time TIMESTAMP,
+            berth_start TIMESTAMP,
+            berth_end TIMESTAMP,
+            departure_time TIMESTAMP,
+            minutes_alongside INTEGER,
+            n_readings INTEGER,
+            confidence DECIMAL(3, 2),
+            completeness VARCHAR
+        )
+    """
+    )
+    conn.close()
+
+
+def replace_port_calls_for_ships(
+    calls: list,
+    mmsi_list: list[int],
+    db_path: Path = DB_PATH,
+) -> None:
+    """Swap in freshly derived port calls for the named ships, leaving others alone."""
+    if not mmsi_list:
+        return
+
+    conn = duckdb.connect(str(db_path))
+    placeholders = ", ".join("?" for _ in mmsi_list)
+    conn.execute(
+        f"DELETE FROM port_call_events WHERE mmsi IN ({placeholders})",
+        list(mmsi_list),
+    )
+    if calls:
+        conn.executemany(
+            """
+            INSERT INTO port_call_events
+            (mmsi, stop_type, arrival_time, berth_start, berth_end, departure_time,
+             minutes_alongside, n_readings, confidence, completeness)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                [
+                    call.mmsi,
+                    call.stop_type,
+                    call.arrival_time,
+                    call.berth_start,
+                    call.berth_end,
+                    call.departure_time,
+                    call.minutes_alongside,
+                    call.n_readings,
+                    call.confidence,
+                    call.completeness,
+                ]
+                for call in calls
+            ],
+        )
+    conn.close()
+
+
+if __name__ == "__main__":
+    initialize_bronze_table()

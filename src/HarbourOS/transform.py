@@ -8,10 +8,12 @@ from HarbourOS.port_calls import derive_port_calls
 from HarbourOS.state_machine import StatePeriod, derive_state_periods
 from HarbourOS.storage import (
     initialize_port_calls_table,
+    initialize_progress_table,
     initialize_silver_tables,
     initialize_state_periods_table,
-    insert_port_calls,
-    insert_state_periods,
+    record_progress,
+    replace_port_calls_for_ships,
+    replace_state_periods_for_ships,
 )
 
 DB_PATH = Path("data/ais_bronze.duckdb")
@@ -70,23 +72,41 @@ def run_silver_transform(db_path: Path = DB_PATH) -> None:
 
 
 def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
-    """Derive confidence-scored state periods for every ship in Silver."""
+    """Rebuild state periods for the ships that have new Silver readings.
+
+    A ship's states depend only on that ship's own readings, so one vessel is the
+    smallest chunk that can be recomputed without risking a wrong answer. Ships
+    with nothing new keep the periods they already have.
+    """
+    initialize_state_periods_table(db_path=db_path)
+    initialize_progress_table(db_path=db_path)
+
     con = duckdb.connect(str(db_path))
-    mmsi_list = [
-        row[0]
-        for row in con.sql("SELECT DISTINCT mmsi FROM ais_messages_silver ORDER BY mmsi").fetchall()
-    ]
+    stale = con.sql(
+        """
+        SELECT s.mmsi, max(s.received_at) AS newest_reading
+        FROM ais_messages_silver AS s
+        LEFT JOIN derived_progress AS p
+               ON p.mmsi = s.mmsi AND p.layer = 'state_periods'
+        GROUP BY s.mmsi, p.built_from_received_at
+        HAVING p.built_from_received_at IS NULL
+            OR max(s.received_at) > p.built_from_received_at
+        ORDER BY s.mmsi
+        """
+    ).fetchall()
+    watermarks = {row[0]: row[1] for row in stale}
 
     all_periods = []
     readings_seen = 0
-    for mmsi in mmsi_list:
-        rows = con.sql(
-            f"""
+    for mmsi in watermarks:
+        rows = con.execute(
+            """
             SELECT message_time, speed_over_ground, navigational_status
             FROM ais_messages_silver
-            WHERE mmsi = {mmsi}
+            WHERE mmsi = ?
             ORDER BY message_time
-            """
+            """,
+            [mmsi],
         ).fetchall()
         messages = [
             {
@@ -100,26 +120,56 @@ def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
         all_periods.extend(derive_state_periods(messages, mmsi=mmsi))
     con.close()
 
-    initialize_state_periods_table(db_path=db_path)
-    insert_state_periods(all_periods, db_path=db_path)
+    replace_state_periods_for_ships(all_periods, list(watermarks), db_path=db_path)
+    record_progress("state_periods", watermarks, db_path=db_path)
 
-    covered = sum(period.n_readings for period in all_periods)
-    print(f"Ships processed:  {len(mmsi_list)}")
-    print(f"Silver readings:  {readings_seen}")
-    print(f"State periods:    {len(all_periods)}")
-    print(f"Readings covered: {covered} (should equal Silver readings)")
+    con = duckdb.connect(str(db_path))
+    total_periods = con.sql("SELECT COUNT(*) FROM ship_state_periods").fetchone()[0]
+    covered = con.sql("SELECT COALESCE(SUM(n_readings), 0) FROM ship_state_periods").fetchone()[0]
+    silver_rows = con.sql("SELECT COUNT(*) FROM ais_messages_silver").fetchone()[0]
+    con.close()
+
+    print(f"Ships rebuilt:    {len(watermarks)}")
+    print(f"Readings read:    {readings_seen}")
+    print(f"State periods:    {total_periods} (all ships)")
+    print(f"Readings covered: {covered} (should equal Silver rows: {silver_rows})")
+
+    if covered != silver_rows:
+        raise ValueError(f"State periods cover {covered} readings but Silver holds {silver_rows}")
 
 
 def run_port_calls_transform(db_path: Path = DB_PATH) -> None:
-    """Group state periods into port-call events, one row per visit."""
+    """Rebuild port calls for the ships whose state periods have changed."""
+    initialize_port_calls_table(db_path=db_path)
+    initialize_progress_table(db_path=db_path)
+
     con = duckdb.connect(str(db_path))
-    rows = con.sql(
+    stale = con.sql(
         """
-        SELECT mmsi, state, start_time, end_time, n_readings, confidence, note
-        FROM ship_state_periods
-        ORDER BY mmsi, start_time
+        SELECT sp.mmsi, sp.built_from_received_at
+        FROM derived_progress AS sp
+        LEFT JOIN derived_progress AS pc
+               ON pc.mmsi = sp.mmsi AND pc.layer = 'port_calls'
+        WHERE sp.layer = 'state_periods'
+          AND (pc.built_from_received_at IS NULL
+               OR sp.built_from_received_at > pc.built_from_received_at)
+        ORDER BY sp.mmsi
         """
     ).fetchall()
+    watermarks = {row[0]: row[1] for row in stale}
+
+    rows = []
+    if watermarks:
+        placeholders = ", ".join("?" for _ in watermarks)
+        rows = con.execute(
+            f"""
+            SELECT mmsi, state, start_time, end_time, n_readings, confidence, note
+            FROM ship_state_periods
+            WHERE mmsi IN ({placeholders})
+            ORDER BY mmsi, start_time
+            """,
+            list(watermarks),
+        ).fetchall()
     con.close()
 
     by_ship: dict[int, list[StatePeriod]] = {}
@@ -139,12 +189,19 @@ def run_port_calls_transform(db_path: Path = DB_PATH) -> None:
     for periods in by_ship.values():
         all_calls.extend(derive_port_calls(periods))
 
-    initialize_port_calls_table(db_path=db_path)
-    insert_port_calls(all_calls, db_path=db_path)
+    replace_port_calls_for_ships(all_calls, list(watermarks), db_path=db_path)
+    record_progress("port_calls", watermarks, db_path=db_path)
 
-    complete = sum(1 for call in all_calls if call.completeness == "complete")
-    print(f"Port-call events: {len(all_calls)}")
-    print(f"Fully observed:   {complete} (both arrival and departure seen)")
+    con = duckdb.connect(str(db_path))
+    total_calls = con.sql("SELECT COUNT(*) FROM port_call_events").fetchone()[0]
+    complete = con.sql(
+        "SELECT COUNT(*) FROM port_call_events WHERE completeness = 'complete'"
+    ).fetchone()[0]
+    con.close()
+
+    print(f"Ships rebuilt:    {len(watermarks)}")
+    print(f"Port-call events: {total_calls} (all ships)")
+    print(f"Fully observed:   {complete}")
 
 
 if __name__ == "__main__":
