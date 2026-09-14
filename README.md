@@ -30,7 +30,3 @@ docker compose up
 # Run full test suite
 pytest tests/ --cov=src/HarbourOS
 ```
-
-## Team
-
-Portfolio project for data engineering interviews.
