@@ -1,3 +1,9 @@
+{{ config(
+    materialized='incremental',
+    incremental_strategy='delete+insert',
+    unique_key='mmsi'
+) }}
+
 -- The fact table. Grain: one vessel stopping once.
 --
 -- Each visit is matched to the nearest known seaport by great-circle distance.
@@ -10,9 +16,23 @@
 -- Haversine is computed in plain SQL rather than pulling in DuckDB's spatial
 -- extension: one formula, no runtime dependency, and exact enough for source
 -- data that is itself only accurate to about 2 km.
+--
+-- Incremental, and the reason is the cross join below: every visit is measured
+-- against all 606 seaports. Rebuilding all visits every run means that cost
+-- grows with total history rather than with new data. Deletion is keyed on
+-- mmsi, not on port_call_key, because a vessel's visits are recomputed as a
+-- set -- if two visits merge into one, keying on the visit would strand the
+-- stale row.
 
 with calls as (
     select * from {{ ref('stg_port_calls') }}
+
+    {% if is_incremental() %}
+    where built_from_received_at > (
+        select coalesce(max(built_from_received_at), timestamp '1970-01-01')
+        from {{ this }}
+    )
+    {% endif %}
 ),
 
 ports as (
@@ -67,7 +87,8 @@ select
     calls.n_readings,
     calls.confidence,
     calls.stop_latitude,
-    calls.stop_longitude
+    calls.stop_longitude,
+    calls.built_from_received_at
 from calls
 left join nearest
     on nearest.mmsi = calls.mmsi

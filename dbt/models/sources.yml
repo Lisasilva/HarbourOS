@@ -11,3 +11,8 @@ sources:
       - name: ais_messages_silver
       - name: ship_state_periods
       - name: port_call_events
+      - name: derived_progress
+        description: >
+          How far each derived layer has been built, per vessel. dbt reads the
+          'port_calls' rows to know which vessels' visits changed since its
+          last run.

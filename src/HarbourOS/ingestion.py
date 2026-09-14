@@ -30,8 +30,14 @@ def get_access_token():
     return token_data["access_token"]
 
 
-def fetch_ais_data(limit=100):
-    """Fetch latest AIS positions from BarentsWatch API"""
+def fetch_ais_data(limit=None):
+    """Fetch the latest AIS positions from BarentsWatch.
+
+    `limit` exists only for tests and quick experiments. In normal use it stays
+    None and every ship the API reports is kept -- a hard-coded cap silently
+    discards ships as the fleet grows, which is how this pipeline spent its
+    first two weeks seeing 100 ships out of 4,014.
+    """
     access_token = get_access_token()
     api_url = "https://live.ais.barentswatch.no/v1/latest/combined"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -45,12 +51,10 @@ def fetch_ais_data(limit=100):
         return []
 
     data = response.json()
-    if isinstance(data, list):
-        positions = data[:limit]
-    else:
-        positions = []
+    if not isinstance(data, list):
+        return []
 
-    return positions
+    return data if limit is None else data[:limit]
 
 
 def fetch_historic_track(mmsi):
@@ -76,9 +80,9 @@ def fetch_historic_track(mmsi):
     return []
 
 
-def ingest_batch(limit=100):
+def ingest_batch(limit=None):
     """Fetch and store a batch of AIS messages in one database write."""
-    print(f"Fetching up to {limit} AIS positions...")
+    print("Fetching AIS positions...")
     positions = fetch_ais_data(limit=limit)
     print(f"Received {len(positions)} positions")
 
@@ -88,4 +92,4 @@ def ingest_batch(limit=100):
 
 
 if __name__ == "__main__":
-    ingest_batch(limit=100)
+    ingest_batch()
