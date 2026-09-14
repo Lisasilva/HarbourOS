@@ -2,6 +2,10 @@
 -- of each one. This is the ONLY place the accept/reject rules are written, so
 -- Silver and Quarantine cannot drift apart: every staged row has either a NULL
 -- rejection_reason (goes to Silver) or a non-NULL one (goes to Quarantine).
+--
+-- 'missing_' and 'invalid_' are deliberately separate reasons. A field the
+-- source never sent is a different failure from a field the source sent wrong:
+-- one points at the feed, the other at the vessel's equipment.
 
 CREATE OR REPLACE TEMP TABLE new_bronze_batch AS
 WITH already_processed AS (
@@ -40,12 +44,15 @@ SELECT
             SELECT 1 FROM ais_messages_silver AS s
             WHERE s.mmsi = r.mmsi AND s.message_time = r.msgtime
         ) THEN 'duplicate'                      -- duplicate of an earlier batch
-        WHEN r.mmsi IS NULL THEN 'null_mmsi'
+        WHEN r.mmsi IS NULL THEN 'missing_mmsi'
         WHEN r.mmsi NOT BETWEEN 100000000 AND 999999999 THEN 'invalid_mmsi_range'
-        WHEN r.latitude IS NULL OR r.latitude NOT BETWEEN -90 AND 90 THEN 'invalid_latitude'
-        WHEN r.longitude IS NULL OR r.longitude NOT BETWEEN -180 AND 180 THEN 'invalid_longitude'
-        WHEN r.speedOverGround IS NULL OR r.speedOverGround NOT BETWEEN 0 AND 102.2 THEN 'invalid_speed'
-        WHEN r.msgtime IS NULL THEN 'null_msgtime'
+        WHEN r.latitude IS NULL THEN 'missing_latitude'
+        WHEN r.latitude NOT BETWEEN -90 AND 90 THEN 'invalid_latitude'
+        WHEN r.longitude IS NULL THEN 'missing_longitude'
+        WHEN r.longitude NOT BETWEEN -180 AND 180 THEN 'invalid_longitude'
+        WHEN r.speedOverGround IS NULL THEN 'missing_speed'
+        WHEN r.speedOverGround NOT BETWEEN 0 AND 102.2 THEN 'invalid_speed'
+        WHEN r.msgtime IS NULL THEN 'missing_msgtime'
         WHEN r.msgtime > CURRENT_TIMESTAMP THEN 'future_timestamp'
         ELSE NULL
     END AS rejection_reason
