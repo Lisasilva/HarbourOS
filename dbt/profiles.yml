@@ -3,5 +3,5 @@ harbouros:
   outputs:
     dev:
       type: duckdb
-      path: "../data/ais_bronze.duckdb"
+      path: "md:harbouros"
       threads: 4

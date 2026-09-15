@@ -7,6 +7,8 @@ import duckdb
 from HarbourOS.port_calls import derive_port_calls
 from HarbourOS.state_machine import StatePeriod, derive_state_periods
 from HarbourOS.storage import (
+    DB_PATH,
+    connect,
     initialize_port_calls_table,
     initialize_progress_table,
     initialize_silver_tables,
@@ -16,7 +18,6 @@ from HarbourOS.storage import (
     replace_state_periods_for_ships,
 )
 
-DB_PATH = Path("data/ais_bronze.duckdb")
 SQL_DIR = Path("sql")
 
 
@@ -26,7 +27,7 @@ def run_sql_file(con: duckdb.DuckDBPyConnection, filename: str) -> None:
     con.execute(sql)
 
 
-def run_silver_transform(db_path: Path = DB_PATH) -> None:
+def run_silver_transform(db_path: Path | str = DB_PATH) -> None:
     """Add newly-arrived Bronze rows to Silver and Quarantine.
 
     Incremental: only Bronze rows received later than the newest row already in
@@ -35,7 +36,7 @@ def run_silver_transform(db_path: Path = DB_PATH) -> None:
     """
     initialize_silver_tables(db_path=db_path)
 
-    con = duckdb.connect(str(db_path))
+    con = connect(db_path)
 
     run_sql_file(con, "silver_stage_new_batch.sql")
     new_rows = con.sql("SELECT COUNT(*) FROM new_bronze_batch").fetchone()[0]
@@ -71,7 +72,7 @@ def run_silver_transform(db_path: Path = DB_PATH) -> None:
         )
 
 
-def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
+def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     """Rebuild state periods for the ships that have new Silver readings.
 
     A ship's states depend only on that ship's own readings, so one vessel is the
@@ -81,7 +82,7 @@ def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
     initialize_state_periods_table(db_path=db_path)
     initialize_progress_table(db_path=db_path)
 
-    con = duckdb.connect(str(db_path))
+    con = connect(db_path)
     stale = con.sql(
         """
         SELECT s.mmsi, max(s.received_at) AS newest_reading
@@ -123,7 +124,7 @@ def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
     replace_state_periods_for_ships(all_periods, list(watermarks), db_path=db_path)
     record_progress("state_periods", watermarks, db_path=db_path)
 
-    con = duckdb.connect(str(db_path))
+    con = connect(db_path)
     total_periods = con.sql("SELECT COUNT(*) FROM ship_state_periods").fetchone()[0]
     covered = con.sql("SELECT COALESCE(SUM(n_readings), 0) FROM ship_state_periods").fetchone()[0]
     silver_rows = con.sql("SELECT COUNT(*) FROM ais_messages_silver").fetchone()[0]
@@ -138,12 +139,12 @@ def run_state_periods_transform(db_path: Path = DB_PATH) -> None:
         raise ValueError(f"State periods cover {covered} readings but Silver holds {silver_rows}")
 
 
-def run_port_calls_transform(db_path: Path = DB_PATH) -> None:
+def run_port_calls_transform(db_path: Path | str = DB_PATH) -> None:
     """Rebuild port calls for the ships whose state periods have changed."""
     initialize_port_calls_table(db_path=db_path)
     initialize_progress_table(db_path=db_path)
 
-    con = duckdb.connect(str(db_path))
+    con = connect(db_path)
     stale = con.sql(
         """
         SELECT sp.mmsi, sp.built_from_received_at
@@ -192,7 +193,7 @@ def run_port_calls_transform(db_path: Path = DB_PATH) -> None:
     replace_port_calls_for_ships(all_calls, list(watermarks), db_path=db_path)
     record_progress("port_calls", watermarks, db_path=db_path)
 
-    con = duckdb.connect(str(db_path))
+    con = connect(db_path)
     total_calls = con.sql("SELECT COUNT(*) FROM port_call_events").fetchone()[0]
     complete = con.sql(
         "SELECT COUNT(*) FROM port_call_events WHERE completeness = 'complete'"
