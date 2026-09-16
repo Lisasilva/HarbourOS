@@ -19,7 +19,10 @@ def connect(db_path: Path | str = DB_PATH) -> duckdb.DuckDBPyConnection:
     """Open a connection to the warehouse, local file or MotherDuck."""
     target = str(db_path)
     if target.startswith("md:"):
-        token = os.environ["MOTHERDUCK_TOKEN"]
+        # Accept either capitalisation. Locally the token comes from .env as
+        # MOTHERDUCK_TOKEN; in GitHub Actions only the lowercase name can be
+        # defined, because Actions treats environment names case-insensitively.
+        token = os.environ.get("MOTHERDUCK_TOKEN") or os.environ["motherduck_token"]
         return duckdb.connect(f"{target}?motherduck_token={token}")
     return duckdb.connect(target)
 

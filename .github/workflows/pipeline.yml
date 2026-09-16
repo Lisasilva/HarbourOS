@@ -16,8 +16,9 @@ jobs:
     env:
       # The warehouse is MotherDuck, not a local file.
       HARBOUROS_DB: md:harbouros
-      # DuckDB reads the lowercase name; our own code reads the uppercase one.
-      MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+      # Lowercase only: GitHub treats environment names case-insensitively, so
+      # it will not accept MOTHERDUCK_TOKEN and motherduck_token together.
+      # DuckDB reads the lowercase one, so that is the one we define.
       motherduck_token: ${{ secrets.MOTHERDUCK_TOKEN }}
       BARENTSWATCH_CLIENT_ID: ${{ secrets.BARENTSWATCH_CLIENT_ID }}
       BARENTSWATCH_CLIENT_SECRET: ${{ secrets.BARENTSWATCH_CLIENT_SECRET }}
