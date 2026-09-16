@@ -2,43 +2,36 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master]
   pull_request:
-    branches: [main, develop]
+    branches: [master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.11']
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.14"
 
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv pip install -e ".[dev]"
+        run: uv sync
 
       - name: Lint with ruff
-        run: ruff check src tests
+        run: uv run ruff check src tests
 
       - name: Format check with black
-        run: black --check src tests
+        run: uv run black --check src tests
 
       - name: Type check with mypy
-        run: mypy src/HarbourOS
+        run: uv run mypy src/HarbourOS
 
       - name: Run tests with pytest
-        run: pytest tests/ -v --cov=src/HarbourOS
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        if: always()
+        run: uv run pytest tests/ -q
