@@ -78,6 +78,11 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     A ship's states depend only on that ship's own readings, so one vessel is the
     smallest chunk that can be recomputed without risking a wrong answer. Ships
     with nothing new keep the periods they already have.
+
+    All the stale ships' readings are fetched in a SINGLE query and grouped in
+    Python. Querying once per ship was correct but issued thousands of separate
+    round trips, which cost 75 minutes against a cloud warehouse and 4 seconds
+    against a local file -- the same code, and only the distance changed.
     """
     initialize_state_periods_table(db_path=db_path)
     initialize_progress_table(db_path=db_path)
@@ -99,26 +104,33 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
 
     all_periods = []
     readings_seen = 0
-    for mmsi in watermarks:
+
+    if watermarks:
+        placeholders = ", ".join("?" for _ in watermarks)
         rows = con.execute(
-            """
-            SELECT message_time, speed_over_ground, navigational_status
+            f"""
+            SELECT mmsi, message_time, speed_over_ground, navigational_status
             FROM ais_messages_silver
-            WHERE mmsi = ?
-            ORDER BY message_time
+            WHERE mmsi IN ({placeholders})
+            ORDER BY mmsi, message_time
             """,
-            [mmsi],
+            list(watermarks),
         ).fetchall()
-        messages = [
-            {
-                "message_time": row[0],
-                "speed_over_ground": row[1],
-                "navigational_status": row[2],
-            }
-            for row in rows
-        ]
-        readings_seen += len(messages)
-        all_periods.extend(derive_state_periods(messages, mmsi=mmsi))
+        readings_seen = len(rows)
+
+        by_ship: dict[int, list[dict]] = {}
+        for row in rows:
+            by_ship.setdefault(row[0], []).append(
+                {
+                    "message_time": row[1],
+                    "speed_over_ground": row[2],
+                    "navigational_status": row[3],
+                }
+            )
+
+        for mmsi, messages in by_ship.items():
+            all_periods.extend(derive_state_periods(messages, mmsi=mmsi))
+
     con.close()
 
     replace_state_periods_for_ships(all_periods, list(watermarks), db_path=db_path)

@@ -14,6 +14,9 @@ load_dotenv()
 # which is why both forms have to keep working.
 DB_PATH: str = os.getenv("HARBOUROS_DB", "data/ais_bronze.duckdb")
 
+# How many rows to send per INSERT statement. See _bulk_insert.
+BULK_CHUNK = 500
+
 
 def connect(db_path: Path | str = DB_PATH) -> duckdb.DuckDBPyConnection:
     """Open a connection to the warehouse, local file or MotherDuck."""
@@ -25,6 +28,33 @@ def connect(db_path: Path | str = DB_PATH) -> duckdb.DuckDBPyConnection:
         token = os.environ.get("MOTHERDUCK_TOKEN") or os.environ["motherduck_token"]
         return duckdb.connect(f"{target}?motherduck_token={token}")
     return duckdb.connect(target)
+
+
+def _bulk_insert(
+    conn: duckdb.DuckDBPyConnection,
+    table: str,
+    columns: list[str],
+    rows: list[list],
+) -> None:
+    """Insert many rows using as few round trips as possible.
+
+    executemany issues one statement per row. Against a local file that costs
+    nothing. Against a cloud warehouse every row becomes a separate trip across
+    the internet -- measured at 20 minutes for 4,284 rows. Sending several
+    hundred rows per INSERT turns thousands of trips into a handful, without
+    building one statement so large the server rejects it.
+    """
+    if not rows:
+        return
+
+    column_list = ", ".join(columns)
+    row_placeholder = "(" + ", ".join("?" for _ in columns) + ")"
+
+    for start in range(0, len(rows), BULK_CHUNK):
+        chunk = rows[start : start + BULK_CHUNK]
+        values = ", ".join([row_placeholder] * len(chunk))
+        flattened = [value for row in chunk for value in row]
+        conn.execute(f"INSERT INTO {table} ({column_list}) VALUES {values}", flattened)
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +117,7 @@ def insert_ais_message(data: dict, db_path: Path | str = DB_PATH) -> None:
 
 
 def insert_ais_messages(messages: list[dict], db_path: Path | str = DB_PATH) -> int:
-    """Insert a whole batch of AIS messages in a single database write.
+    """Insert a whole batch of AIS messages in as few writes as possible.
 
     Every row in the batch gets the SAME received_at, set here in Python rather
     than left to the column default. That makes a batch identifiable as one unit
@@ -120,14 +150,24 @@ def insert_ais_messages(messages: list[dict], db_path: Path | str = DB_PATH) -> 
 
     conn = connect(db_path)
     try:
-        conn.executemany(
-            """
-            INSERT INTO ais_messages_bronze
-            (mmsi, name, latitude, longitude, speedOverGround, courseOverGround,
-             trueHeading, rateOfTurn, shipType, navigationalStatus, stream, msgtime,
-             received_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+        _bulk_insert(
+            conn,
+            "ais_messages_bronze",
+            [
+                "mmsi",
+                "name",
+                "latitude",
+                "longitude",
+                "speedOverGround",
+                "courseOverGround",
+                "trueHeading",
+                "rateOfTurn",
+                "shipType",
+                "navigationalStatus",
+                "stream",
+                "msgtime",
+                "received_at",
+            ],
             rows,
         )
     finally:
@@ -221,11 +261,10 @@ def record_progress(
         f"DELETE FROM derived_progress WHERE layer = ? AND mmsi IN ({placeholders})",
         [layer, *watermarks.keys()],
     )
-    conn.executemany(
-        """
-        INSERT INTO derived_progress (layer, mmsi, built_from_received_at)
-        VALUES (?, ?, ?)
-        """,
+    _bulk_insert(
+        conn,
+        "derived_progress",
+        ["layer", "mmsi", "built_from_received_at"],
         [[layer, mmsi, built_from] for mmsi, built_from in watermarks.items()],
     )
     conn.close()
@@ -270,26 +309,23 @@ def replace_state_periods_for_ships(
         f"DELETE FROM ship_state_periods WHERE mmsi IN ({placeholders})",
         list(mmsi_list),
     )
-    if periods:
-        conn.executemany(
-            """
-            INSERT INTO ship_state_periods
-            (mmsi, state, start_time, end_time, n_readings, confidence, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
+    _bulk_insert(
+        conn,
+        "ship_state_periods",
+        ["mmsi", "state", "start_time", "end_time", "n_readings", "confidence", "note"],
+        [
             [
-                [
-                    period.mmsi,
-                    period.state,
-                    period.start_time,
-                    period.end_time,
-                    period.n_readings,
-                    period.confidence,
-                    period.note,
-                ]
-                for period in periods
-            ],
-        )
+                period.mmsi,
+                period.state,
+                period.start_time,
+                period.end_time,
+                period.n_readings,
+                period.confidence,
+                period.note,
+            ]
+            for period in periods
+        ],
+    )
     conn.close()
 
 
@@ -335,30 +371,37 @@ def replace_port_calls_for_ships(
         f"DELETE FROM port_call_events WHERE mmsi IN ({placeholders})",
         list(mmsi_list),
     )
-    if calls:
-        conn.executemany(
-            """
-            INSERT INTO port_call_events
-            (mmsi, stop_type, arrival_time, berth_start, berth_end, departure_time,
-             minutes_alongside, n_readings, confidence, completeness)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+    _bulk_insert(
+        conn,
+        "port_call_events",
+        [
+            "mmsi",
+            "stop_type",
+            "arrival_time",
+            "berth_start",
+            "berth_end",
+            "departure_time",
+            "minutes_alongside",
+            "n_readings",
+            "confidence",
+            "completeness",
+        ],
+        [
             [
-                [
-                    call.mmsi,
-                    call.stop_type,
-                    call.arrival_time,
-                    call.berth_start,
-                    call.berth_end,
-                    call.departure_time,
-                    call.minutes_alongside,
-                    call.n_readings,
-                    call.confidence,
-                    call.completeness,
-                ]
-                for call in calls
-            ],
-        )
+                call.mmsi,
+                call.stop_type,
+                call.arrival_time,
+                call.berth_start,
+                call.berth_end,
+                call.departure_time,
+                call.minutes_alongside,
+                call.n_readings,
+                call.confidence,
+                call.completeness,
+            ]
+            for call in calls
+        ],
+    )
     conn.close()
 
 
