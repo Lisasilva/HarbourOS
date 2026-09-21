@@ -1,7 +1,12 @@
 name: Pipeline
 
-# Manual only for now. The schedule comes once we've watched it work.
+# Hourly, plus a manual button. Hourly rather than more often because GitHub's
+# cron is approximate and can run late under load, so a tighter cadence would
+# promise a regularity it cannot keep -- and because the state machine's gap
+# tolerance has to be set from whatever cadence actually lands.
 on:
+  schedule:
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 # Never let two runs write to the warehouse at the same time.
