@@ -4,6 +4,7 @@ from pathlib import Path
 
 import duckdb
 import pytest
+
 from HarbourOS.storage import initialize_bronze_table, insert_ais_message
 from HarbourOS.transform import run_silver_transform
 
