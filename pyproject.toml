@@ -42,7 +42,13 @@ target-version = ['py312']
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["HarbourOS"]
+known-third-party = ["dagster"]
 
 [tool.mypy]
 python_version = "3.14"
