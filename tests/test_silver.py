@@ -1,4 +1,5 @@
 """Tests for the Silver layer: deduplication, validation, and quarantine tagging."""
+
 from pathlib import Path
 
 import duckdb

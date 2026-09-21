@@ -27,6 +27,21 @@ def run_sql_file(con: duckdb.DuckDBPyConnection, filename: str) -> None:
     con.execute(sql)
 
 
+def fetch_number(con: duckdb.DuckDBPyConnection, sql: str) -> int:
+    """Run a counting query and return its single number.
+
+    fetchone() returns None when a query produces no rows at all, so indexing it
+    directly is a crash waiting for the one query that comes back empty. Every
+    caller here asks for a COUNT or a COALESCE'd SUM, which always produce
+    exactly one row -- so an empty result means the query itself is wrong, and
+    saying so by name beats a bare TypeError.
+    """
+    row = con.sql(sql).fetchone()
+    if row is None:
+        raise ValueError(f"Expected one row, got none, from: {sql}")
+    return int(row[0])
+
+
 def run_silver_transform(db_path: Path | str = DB_PATH) -> None:
     """Add newly-arrived Bronze rows to Silver and Quarantine.
 
@@ -39,14 +54,14 @@ def run_silver_transform(db_path: Path | str = DB_PATH) -> None:
     con = connect(db_path)
 
     run_sql_file(con, "silver_stage_new_batch.sql")
-    new_rows = con.sql("SELECT COUNT(*) FROM new_bronze_batch").fetchone()[0]
+    new_rows = fetch_number(con, "SELECT COUNT(*) FROM new_bronze_batch")
 
     run_sql_file(con, "silver_insert_accepted.sql")
     run_sql_file(con, "silver_insert_rejected.sql")
 
-    bronze_count = con.sql("SELECT COUNT(*) FROM ais_messages_bronze").fetchone()[0]
-    silver_count = con.sql("SELECT COUNT(*) FROM ais_messages_silver").fetchone()[0]
-    quarantine_count = con.sql("SELECT COUNT(*) FROM ais_messages_quarantine").fetchone()[0]
+    bronze_count = fetch_number(con, "SELECT COUNT(*) FROM ais_messages_bronze")
+    silver_count = fetch_number(con, "SELECT COUNT(*) FROM ais_messages_silver")
+    quarantine_count = fetch_number(con, "SELECT COUNT(*) FROM ais_messages_quarantine")
 
     print(f"New rows this run: {new_rows}")
     print(f"Bronze rows:      {bronze_count}")
@@ -137,9 +152,9 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     record_progress("state_periods", watermarks, db_path=db_path)
 
     con = connect(db_path)
-    total_periods = con.sql("SELECT COUNT(*) FROM ship_state_periods").fetchone()[0]
-    covered = con.sql("SELECT COALESCE(SUM(n_readings), 0) FROM ship_state_periods").fetchone()[0]
-    silver_rows = con.sql("SELECT COUNT(*) FROM ais_messages_silver").fetchone()[0]
+    total_periods = fetch_number(con, "SELECT COUNT(*) FROM ship_state_periods")
+    covered = fetch_number(con, "SELECT COALESCE(SUM(n_readings), 0) FROM ship_state_periods")
+    silver_rows = fetch_number(con, "SELECT COUNT(*) FROM ais_messages_silver")
     con.close()
 
     print(f"Ships rebuilt:    {len(watermarks)}")
@@ -206,10 +221,10 @@ def run_port_calls_transform(db_path: Path | str = DB_PATH) -> None:
     record_progress("port_calls", watermarks, db_path=db_path)
 
     con = connect(db_path)
-    total_calls = con.sql("SELECT COUNT(*) FROM port_call_events").fetchone()[0]
-    complete = con.sql(
-        "SELECT COUNT(*) FROM port_call_events WHERE completeness = 'complete'"
-    ).fetchone()[0]
+    total_calls = fetch_number(con, "SELECT COUNT(*) FROM port_call_events")
+    complete = fetch_number(
+        con, "SELECT COUNT(*) FROM port_call_events WHERE completeness = 'complete'"
+    )
     con.close()
 
     print(f"Ships rebuilt:    {len(watermarks)}")

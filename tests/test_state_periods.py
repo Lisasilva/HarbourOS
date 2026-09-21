@@ -1,4 +1,5 @@
 """End-to-end: Silver readings become rows in the state-period table."""
+
 from datetime import datetime, timedelta
 from pathlib import Path
 

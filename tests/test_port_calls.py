@@ -1,4 +1,5 @@
 """Tests for grouping state periods into port-call events."""
+
 from datetime import datetime, timedelta
 
 from HarbourOS.port_calls import derive_port_calls

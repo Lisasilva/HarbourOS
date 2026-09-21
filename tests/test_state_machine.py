@@ -1,4 +1,5 @@
 """Tests for the port-call state machine."""
+
 from datetime import datetime, timedelta
 
 from HarbourOS.state_machine import (
