@@ -5,7 +5,7 @@ from pathlib import Path
 import duckdb
 
 from HarbourOS.port_calls import derive_port_calls
-from HarbourOS.state_machine import StatePeriod, derive_state_periods
+from HarbourOS.state_machine import DWELL_READINGS, StatePeriod, derive_state_periods
 from HarbourOS.storage import (
     DB_PATH,
     connect,
@@ -15,7 +15,7 @@ from HarbourOS.storage import (
     initialize_state_periods_table,
     record_progress,
     replace_port_calls_for_ships,
-    replace_state_periods_for_ships,
+    replace_state_periods_since,
 )
 
 SQL_DIR = Path("sql")
@@ -94,6 +94,15 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     smallest chunk that can be recomputed without risking a wrong answer. Ships
     with nothing new keep the periods they already have.
 
+    Within a ship, only the tail is rebuilt: from the start of the latest
+    believable period (at least DWELL_READINGS readings) that begins no later
+    than the ship's earliest new reading. Everything before a believable period
+    is final -- the state machine reads left to right and nothing after that
+    point can reach back past it -- so rebuilding from there gives exactly what
+    a full rebuild would, while the work per run stays proportional to new data
+    instead of growing with the whole history. Ships with no such period are
+    rebuilt in full.
+
     All the stale ships' readings are fetched in a SINGLE query and grouped in
     Python. Querying once per ship was correct but issued thousands of separate
     round trips, which cost 75 minutes against a cloud warehouse and 4 seconds
@@ -103,33 +112,70 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     initialize_progress_table(db_path=db_path)
 
     con = connect(db_path)
+    con.execute(
+        f"""
+        CREATE OR REPLACE TEMP TABLE state_period_restarts AS
+        WITH new_readings AS (
+            SELECT
+                s.mmsi,
+                max(s.received_at) AS newest_reading,
+                min(s.message_time) AS earliest_new
+            FROM ais_messages_silver AS s
+            LEFT JOIN derived_progress AS p
+                   ON p.mmsi = s.mmsi AND p.layer = 'state_periods'
+            WHERE p.built_from_received_at IS NULL
+               OR s.received_at > p.built_from_received_at
+            GROUP BY s.mmsi
+        ),
+        periods AS (
+            SELECT
+                mmsi,
+                start_time,
+                n_readings,
+                lag(state) OVER (PARTITION BY mmsi ORDER BY start_time) AS previous_state
+            FROM ship_state_periods
+            WHERE mmsi IN (SELECT mmsi FROM new_readings)
+        ),
+        restarts AS (
+            SELECT
+                p.mmsi,
+                max(p.start_time) AS since,
+                arg_max(p.previous_state, p.start_time) AS previous_state
+            FROM periods AS p
+            JOIN new_readings AS n ON n.mmsi = p.mmsi
+            WHERE p.n_readings >= {DWELL_READINGS}
+              AND p.start_time <= n.earliest_new
+            GROUP BY p.mmsi
+        )
+        SELECT
+            n.mmsi,
+            n.newest_reading,
+            coalesce(r.since, TIMESTAMP '1970-01-01 00:00:00') AS since,
+            r.previous_state
+        FROM new_readings AS n
+        LEFT JOIN restarts AS r ON r.mmsi = n.mmsi
+        """
+    )
     stale = con.sql(
-        """
-        SELECT s.mmsi, max(s.received_at) AS newest_reading
-        FROM ais_messages_silver AS s
-        LEFT JOIN derived_progress AS p
-               ON p.mmsi = s.mmsi AND p.layer = 'state_periods'
-        GROUP BY s.mmsi, p.built_from_received_at
-        HAVING p.built_from_received_at IS NULL
-            OR max(s.received_at) > p.built_from_received_at
-        ORDER BY s.mmsi
-        """
+        "SELECT mmsi, newest_reading, since, previous_state "
+        "FROM state_period_restarts ORDER BY mmsi"
     ).fetchall()
     watermarks = {row[0]: row[1] for row in stale}
+    since = {row[0]: row[2] for row in stale}
+    previous_states = {row[0]: row[3] for row in stale}
 
     all_periods = []
     readings_seen = 0
 
     if watermarks:
-        placeholders = ", ".join("?" for _ in watermarks)
-        rows = con.execute(
-            f"""
-            SELECT mmsi, message_time, speed_over_ground, navigational_status
-            FROM ais_messages_silver
-            WHERE mmsi IN ({placeholders})
-            ORDER BY mmsi, message_time
-            """,
-            list(watermarks),
+        rows = con.sql(
+            """
+            SELECT s.mmsi, s.message_time, s.speed_over_ground, s.navigational_status
+            FROM ais_messages_silver AS s
+            JOIN state_period_restarts AS r
+              ON r.mmsi = s.mmsi AND s.message_time >= r.since
+            ORDER BY s.mmsi, s.message_time
+            """
         ).fetchall()
         readings_seen = len(rows)
 
@@ -144,11 +190,13 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
             )
 
         for mmsi, messages in by_ship.items():
-            all_periods.extend(derive_state_periods(messages, mmsi=mmsi))
+            all_periods.extend(
+                derive_state_periods(messages, mmsi=mmsi, previous_state=previous_states[mmsi])
+            )
 
     con.close()
 
-    replace_state_periods_for_ships(all_periods, list(watermarks), db_path=db_path)
+    replace_state_periods_since(all_periods, since, db_path=db_path)
     record_progress("state_periods", watermarks, db_path=db_path)
 
     con = connect(db_path)
@@ -158,7 +206,7 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
     con.close()
 
     print(f"Ships rebuilt:    {len(watermarks)}")
-    print(f"Readings read:    {readings_seen}")
+    print(f"Readings read:    {readings_seen} (tail of each ship's history only)")
     print(f"State periods:    {total_periods} (all ships)")
     print(f"Readings covered: {covered} (should equal Silver rows: {silver_rows})")
 

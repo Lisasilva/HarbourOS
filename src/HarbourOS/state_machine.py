@@ -193,19 +193,26 @@ def _denoise(runs: list[_Run]) -> list[_Run]:
     return kept
 
 
-def _name_transitions(runs: list[_Run]) -> list[_Run]:
+def _name_transitions(runs: list[_Run], previous_state: str | None = None) -> list[_Run]:
     """A slow-moving stretch is 'approach' coming in, 'departed' going out."""
     for index, run in enumerate(runs):
         if run.state != "maneuvering":
             continue
-        previous_state = runs[index - 1].state if index > 0 else None
-        run.state = "departed" if previous_state in STOPPED_STATES else "approach"
+        before = runs[index - 1].state if index > 0 else previous_state
+        run.state = "departed" if before in STOPPED_STATES else "approach"
     return runs
 
 
-def derive_state_periods(messages: list[dict], mmsi: int) -> list[StatePeriod]:
-    """Turn one ship's time-ordered AIS readings into confidence-scored states."""
-    runs = _name_transitions(_denoise(_group_into_runs(messages)))
+def derive_state_periods(
+    messages: list[dict], mmsi: int, previous_state: str | None = None
+) -> list[StatePeriod]:
+    """Turn one ship's time-ordered AIS readings into confidence-scored states.
+
+    `previous_state` is the state of the period just before `messages` begin,
+    for when only the tail of a ship's history is being rebuilt. It matters
+    only for naming a leading slow stretch 'approach' or 'departed'.
+    """
+    runs = _name_transitions(_denoise(_group_into_runs(messages)), previous_state)
     return [
         StatePeriod(
             mmsi=mmsi,

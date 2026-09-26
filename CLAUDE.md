@@ -47,10 +47,15 @@ pytest tests/ -v
 ```
 
 ## Deployment
-Everything deploys automatically from `.github/workflows/pipeline.yml`,
-which runs hourly (and can be started by hand from the Actions tab):
-1. Ingest live AIS positions → build Silver, states and port calls → `dbt build`
-   (all against MotherDuck, `HARBOUROS_DB=md:harbouros`)
+Everything deploys automatically from `.github/workflows/pipeline.yml`
+(and it can be started by hand from the Actions tab). Each run:
+1. Collects live AIS positions every 10 minutes for ~5½ hours
+   (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
+   states and port calls and runs `dbt build` (all against MotherDuck,
+   `HARBOUROS_DB=md:harbouros`). The schedule fires hourly, and the concurrency
+   group queues the next run behind the current one, so collection is nearly
+   continuous and the site updates about 4 times a day. For a quick manual test,
+   set "collect_minutes" to something small.
 2. If all of that succeeds, build the dashboard (`dashboard/`). Its data
    loader `dashboard/src/data/port_calls.csv.py` reads the fresh Gold tables
    from MotherDuck at build time, so no exported CSV is committed.
@@ -95,10 +100,15 @@ cd dashboard && npm run deploy
   is a local and dev alternative that production doesn't run. Its bronze asset
   still calls `ingest_batch(limit=100)`, the same 100-ship cap that
   `ingestion.py` warns about.
-- **"Hourly" really runs every 3–6 hours.** GitHub delays top-of-the-hour
-  cron jobs, so there are only about 6 pipeline runs a day. Each run takes one
-  snapshot per ship, so short port stays can be missed and arrival and
-  departure times are coarse.
+- **GitHub cron is unreliable.** Hourly top-of-the-hour runs actually started
+  every 3–6 hours. That is why collection happens *inside* a long run (a
+  snapshot every 10 minutes) rather than one snapshot per scheduled run: the
+  state machine only joins sightings at most 30 minutes apart (`MAX_GAP`).
+- **Stay inside MotherDuck's free plan (10 compute hours a month).** Snapshots
+  are uploaded once per run, and state periods are rebuilt only from each
+  ship's latest believable period (see `run_state_periods_transform`), so the
+  work per run doesn't grow with history. Port calls are still rebuilt from
+  every period of each changed ship. Watch that if usage climbs.
 - **Root `.gitignore` ignores every `data/` folder.** The dashboard's loaders
   in `dashboard/src/data/*.py` are re-included explicitly, and CSVs there stay
   ignored.

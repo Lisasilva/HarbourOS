@@ -1,4 +1,5 @@
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -176,6 +177,85 @@ def insert_ais_messages(messages: list[dict], db_path: Path | str = DB_PATH) -> 
     return len(rows)
 
 
+BRONZE_COLUMNS = [
+    "mmsi",
+    "name",
+    "latitude",
+    "longitude",
+    "speedOverGround",
+    "courseOverGround",
+    "trueHeading",
+    "rateOfTurn",
+    "shipType",
+    "navigationalStatus",
+    "stream",
+    "msgtime",
+    "received_at",
+]
+
+
+def insert_ais_snapshots(
+    snapshots: list[tuple[datetime, list[dict]]],
+    db_path: Path | str = DB_PATH,
+) -> int:
+    """Write many polls' worth of AIS messages to Bronze in one statement.
+
+    Each poll keeps its own received_at, so the incremental transforms see the
+    polls as separate batches, exactly as if each had been inserted on its own.
+    The rows are first staged in a Parquet file on this machine and then
+    loaded with a single INSERT: against a cloud warehouse that is one upload
+    instead of hundreds of chunked round trips.
+    """
+    rows = [
+        [*(message.get(column) for column in BRONZE_COLUMNS[:-1]), received_at]
+        for received_at, messages in snapshots
+        for message in messages
+    ]
+    if not rows:
+        return 0
+
+    column_list = ", ".join(BRONZE_COLUMNS)
+    with tempfile.TemporaryDirectory() as folder:
+        staged = Path(folder) / "snapshots.parquet"
+
+        local = duckdb.connect()
+        try:
+            local.execute(
+                """
+                CREATE TABLE staged (
+                    mmsi INTEGER,
+                    name VARCHAR,
+                    latitude DECIMAL(10, 6),
+                    longitude DECIMAL(10, 6),
+                    speedOverGround DECIMAL(10, 2),
+                    courseOverGround DECIMAL(10, 2),
+                    trueHeading DECIMAL(10, 2),
+                    rateOfTurn DECIMAL(10, 2),
+                    shipType INTEGER,
+                    navigationalStatus INTEGER,
+                    stream VARCHAR,
+                    msgtime TIMESTAMP,
+                    received_at TIMESTAMP
+                )
+                """
+            )
+            _bulk_insert(local, "staged", BRONZE_COLUMNS, rows)
+            local.execute(f"COPY staged TO '{staged}' (FORMAT parquet)")
+        finally:
+            local.close()
+
+        conn = connect(db_path)
+        try:
+            conn.execute(
+                f"INSERT INTO ais_messages_bronze ({column_list}) "
+                f"SELECT {column_list} FROM read_parquet('{staged}')"
+            )
+        finally:
+            conn.close()
+
+    return len(rows)
+
+
 # ---------------------------------------------------------------------------
 # Silver
 # ---------------------------------------------------------------------------
@@ -294,39 +374,50 @@ def initialize_state_periods_table(db_path: Path | str = DB_PATH) -> None:
     conn.close()
 
 
-def replace_state_periods_for_ships(
+def replace_state_periods_since(
     periods: list,
-    mmsi_list: list[int],
+    since: dict[int, datetime],
     db_path: Path | str = DB_PATH,
 ) -> None:
-    """Swap in freshly derived periods for the named ships, leaving others alone."""
-    if not mmsi_list:
+    """Swap in rebuilt periods for each ship from its own restart point onward.
+
+    Periods starting before a ship's restart point are kept as they are. That
+    is what lets a run rebuild only the tail of each ship's history instead of
+    all of it.
+    """
+    if not since:
         return
 
     conn = connect(db_path)
-    placeholders = ", ".join("?" for _ in mmsi_list)
-    conn.execute(
-        f"DELETE FROM ship_state_periods WHERE mmsi IN ({placeholders})",
-        list(mmsi_list),
-    )
-    _bulk_insert(
-        conn,
-        "ship_state_periods",
-        ["mmsi", "state", "start_time", "end_time", "n_readings", "confidence", "note"],
-        [
+    try:
+        values = ", ".join("(?, ?)" for _ in since)
+        conn.execute(
+            f"""
+            DELETE FROM ship_state_periods AS p
+            USING (VALUES {values}) AS r(mmsi, since)
+            WHERE p.mmsi = r.mmsi AND p.start_time >= r.since
+            """,
+            [value for mmsi, start in since.items() for value in (mmsi, start)],
+        )
+        _bulk_insert(
+            conn,
+            "ship_state_periods",
+            ["mmsi", "state", "start_time", "end_time", "n_readings", "confidence", "note"],
             [
-                period.mmsi,
-                period.state,
-                period.start_time,
-                period.end_time,
-                period.n_readings,
-                period.confidence,
-                period.note,
-            ]
-            for period in periods
-        ],
-    )
-    conn.close()
+                [
+                    period.mmsi,
+                    period.state,
+                    period.start_time,
+                    period.end_time,
+                    period.n_readings,
+                    period.confidence,
+                    period.note,
+                ]
+                for period in periods
+            ],
+        )
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
