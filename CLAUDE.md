@@ -80,7 +80,7 @@ cd dashboard && npm run deploy
 5. Merge to master when ready
 
 ## Working Agreements
-- Noreeta merges every PR herself. Claude opens PRs and never merges them.
+- Maria merges every PR herself. Claude opens PRs and never merges them.
 - Keep the `Co-Authored-By: Claude ...` trailer on commits (her decision).
 - Never change anything that costs money or needs a credit card. Cloudflare,
   MotherDuck and the GitHub secrets are hers: tell her what to change, and
@@ -111,7 +111,7 @@ cd dashboard && npm run deploy
 - Python 3.14 is used in CI. dagster-dbt is avoided because it pins an older
   dbt that breaks on 3.14 (see the orchestration.py docstring).
 
-## Roadmap (agreed with Noreeta, 2026-09-26)
+## Roadmap (agreed with Maria, 2026-09-26)
 Done: automatic dashboard deploy (PR #1), Node 24 actions (PR #2).
 Next, roughly in priority order:
 1. Make the pipeline run on time (it runs every 3–6 hours, not hourly), since
