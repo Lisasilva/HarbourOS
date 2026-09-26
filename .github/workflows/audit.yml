@@ -1,0 +1,40 @@
+name: Data audit
+
+# A read-only data-quality report on the warehouse (see src/HarbourOS/audit.py).
+# Start it by hand from the Actions tab; the report appears on the run's page.
+# It only reads, so it has its own concurrency group and never waits for, or
+# holds up, the pipeline.
+on:
+  workflow_dispatch:
+  push:
+    branches: [data-quality-audit]
+
+concurrency:
+  group: audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      HARBOUROS_DB: md:harbouros
+      motherduck_token: ${{ secrets.MOTHERDUCK_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run the data-quality audit
+        run: uv run python -m HarbourOS.audit
