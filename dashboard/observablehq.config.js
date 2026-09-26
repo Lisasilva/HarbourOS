@@ -22,6 +22,13 @@ export default {
   // The path to the source root.
   root: "src",
 
+  // Run Python data loaders inside the project's uv environment, so they can
+  // import HarbourOS and reach the warehouse with the same settings as the
+  // pipeline.
+  interpreters: {
+    ".py": ["uv", "run", "python"]
+  },
+
   // Some additional configuration options and their defaults:
   // theme: "default", // try "light", "dark", "slate", etc.
   // header: "", // what to show in the header (HTML)

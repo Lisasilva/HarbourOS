@@ -47,11 +47,29 @@ pytest tests/ -v
 
 
 ## Deployment
-Production pipeline runs hourly via GitHub Actions (pipeline.yml) against MotherDuck
-Dashboard is live at https://harbouros.pages.dev/
-(Note: exact deploy mechanism for the dashboard to this URL isn't fully
-captured in the repo yet — worth double-checking/documenting how this
-connects to Cloudflare Pages if that's what's serving it)
+Everything deploys automatically from `.github/workflows/pipeline.yml`,
+which runs hourly (and can be started by hand from the Actions tab):
+1. Ingest live AIS positions → build Silver, states and port calls → `dbt build`
+   (all against MotherDuck, `HARBOUROS_DB=md:harbouros`)
+2. If all of that succeeds, build the dashboard (`dashboard/`). Its data
+   loader `dashboard/src/data/port_calls.csv.py` reads the fresh Gold tables
+   from MotherDuck at build time, so no exported CSV is committed.
+3. Publish the build to Cloudflare Pages project `harbouros`
+   → https://harbouros.pages.dev/
+
+The Cloudflare Pages project is not connected to GitHub, so a `git push` alone
+does not update the site; the pipeline run does. A failed run leaves the
+previous version live.
+
+Secrets (GitHub repo → Settings → Secrets and variables → Actions):
+`MOTHERDUCK_TOKEN`, `BARENTSWATCH_CLIENT_ID`, `BARENTSWATCH_CLIENT_SECRET`,
+`CLOUDFLARE_API_TOKEN` (Cloudflare Pages: Edit permission), `CLOUDFLARE_ACCOUNT_ID`.
+
+Manual deploy from a laptop (needs `MOTHERDUCK_TOKEN` in `.env` and
+`HARBOUROS_DB=md:harbouros`, plus `npx wrangler login` once):
+```bash
+cd dashboard && npm run deploy
+```
 
 
 ## Making Changes
