@@ -6,8 +6,6 @@ name: Data audit
 # holds up, the pipeline.
 on:
   workflow_dispatch:
-  push:
-    branches: [data-quality-audit]
 
 concurrency:
   group: audit
