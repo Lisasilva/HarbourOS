@@ -10,3 +10,9 @@ dbt/dbt_packages/
 dbt/.user.yml
 .dagster/
 *.save
+
+# The dashboard's data loaders live in dashboard/src/data/ and must be
+# committed, but anything they (or a manual export) write there must not.
+!dashboard/src/data/
+dashboard/src/data/*
+!dashboard/src/data/*.py

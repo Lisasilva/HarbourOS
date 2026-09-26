@@ -51,3 +51,27 @@ jobs:
       - name: Build the Gold star schema
         working-directory: dbt
         run: uv run dbt build
+
+      # Publish the dashboard. It runs only if every step above succeeded, so
+      # the live site never shows a half-built warehouse. The Python data
+      # loader in dashboard/src/data reads the fresh Gold tables from
+      # MotherDuck during the build, using the same credentials as above.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Build the dashboard
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy the dashboard to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dashboard/dist --project-name harbouros
