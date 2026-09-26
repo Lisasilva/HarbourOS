@@ -1,13 +1,23 @@
 name: Pipeline
 
-# Hourly, plus a manual button. Hourly rather than more often because GitHub's
-# cron is approximate and can run late under load, so a tighter cadence would
-# promise a regularity it cannot keep -- and because the state machine's gap
-# tolerance has to be set from whatever cadence actually lands.
+# Each run collects AIS snapshots every 10 minutes for about five and a half
+# hours, then builds and publishes everything once. The state machine can only
+# join sightings of a ship that are at most 30 minutes apart, so one snapshot
+# per run was never enough: GitHub starts scheduled runs hours late, and the
+# gaps swallowed the port calls.
+#
+# The schedule fires hourly, at :17 because GitHub is busiest on the hour.
+# While a run is collecting, the concurrency group below holds the next one in
+# the queue, so a new run starts as soon as the last one finishes and the
+# collection is close to continuous.
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
+    inputs:
+      collect_minutes:
+        description: "Minutes to collect before building (use a small number to test)"
+        default: "330"
 
 # Never let two runs write to the warehouse at the same time.
 concurrency:
@@ -17,6 +27,9 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
+    # GitHub stops any job at 6 hours. Collection takes 330 minutes; the rest
+    # is setup, transforms, dbt and the dashboard.
+    timeout-minutes: 355
 
     env:
       # The warehouse is MotherDuck, not a local file.
@@ -42,8 +55,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Ingest live AIS positions
-        run: uv run python -m HarbourOS.ingestion
+      - name: Collect live AIS positions every 10 minutes
+        env:
+          COLLECT_MINUTES: ${{ inputs.collect_minutes || '330' }}
+        run: uv run python -m HarbourOS.collect --minutes "$COLLECT_MINUTES" --every 10
 
       - name: Build Silver, state periods and port calls
         run: uv run python -m HarbourOS.transform
