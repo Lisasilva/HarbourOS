@@ -4,9 +4,11 @@ Live polling only captures one snapshot per run -- not enough to see a full
 port-call journey. This pulls dense, real history so the Day 4-5 state
 machine has something real to work with.
 """
+
 from pathlib import Path
 
 import duckdb
+
 from HarbourOS.ingestion import fetch_historic_track
 from HarbourOS.storage import insert_ais_message
 

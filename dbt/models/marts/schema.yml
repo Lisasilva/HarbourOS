@@ -45,6 +45,15 @@ models:
               arguments:
                 to: ref('dim_port')
                 field: port_locode
+      - name: visit_type
+        description: >
+          'port_call' when a seaport was matched within port_match_km,
+          'at_sea' otherwise (rigs, fish farms, offshore anchorages).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["port_call", "at_sea"]
       - name: arrival_date_key
         tests:
           - not_null

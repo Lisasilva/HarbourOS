@@ -9,6 +9,7 @@ Function is an 8-position flag string like "1-3-----": position 1 marks a
 seaport, 2 rail, 3 road, 4 airport. Coordinates are left raw ("6326N 01023E")
 and parsed in the staging model, so that conversion is SQL and can be tested.
 """
+
 import csv
 import io
 from pathlib import Path

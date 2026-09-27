@@ -16,6 +16,7 @@ QUERY = """
         v.vessel_name,
         p.port_name,
         f.stop_type,
+        f.visit_type,
         f.completeness,
         f.berth_start,
         f.minutes_alongside,

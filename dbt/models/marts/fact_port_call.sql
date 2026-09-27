@@ -13,6 +13,12 @@
 -- 0.4 km is solid, one at 9 km deserves suspicion. Beyond the cutoff we record
 -- no port at all rather than inventing one.
 --
+-- visit_type says what kind of stop this was: 'port_call' when a seaport was
+-- matched, 'at_sea' otherwise. An audit of the first weeks of data found 14%
+-- of stops over 10 km from any seaport -- mostly oil rigs and supply ships in
+-- the North Sea fields. Those are real stops, just not port calls, so they
+-- get their own label rather than silently counting toward port traffic.
+--
 -- Haversine is computed in plain SQL rather than pulling in DuckDB's spatial
 -- extension: one formula, no runtime dependency, and exact enough for source
 -- data that is itself only accurate to about 2 km.
@@ -75,6 +81,11 @@ select
         when nearest.distance_km <= {{ var('port_match_km', 10) }}
         then nearest.port_locode
     end as port_locode,
+    case
+        when nearest.distance_km <= {{ var('port_match_km', 10) }}
+        then 'port_call'
+        else 'at_sea'
+    end as visit_type,
     round(nearest.distance_km, 2) as nearest_port_km,
     cast(strftime(calls.arrival_time, '%Y%m%d') as integer) as arrival_date_key,
     calls.stop_type,
