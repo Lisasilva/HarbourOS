@@ -5,10 +5,15 @@ The worldwide list is ~120k entries; we keep only Norwegian entries flagged as
 seaports that carry coordinates -- a few hundred rows, small enough to
 version-control as a dbt seed so the project builds from a fresh clone.
 
+Svalbard is Norwegian, but UN/LOCODE files it under its own country code (SJ).
+Without it, every stop in Longyearbyen or Ny-Alesund looked like a stop
+800 km out at sea.
+
 Function is an 8-position flag string like "1-3-----": position 1 marks a
 seaport, 2 rail, 3 road, 4 airport. Coordinates are left raw ("6326N 01023E")
 and parsed in the staging model, so that conversion is SQL and can be tested.
 """
+
 import csv
 import io
 from pathlib import Path
@@ -17,7 +22,7 @@ import requests
 
 SOURCE_URL = "https://raw.githubusercontent.com/datasets/un-locode/main/data/code-list.csv"
 SEED_PATH = Path("dbt/seeds/un_locode_ports.csv")
-COUNTRY = "NO"
+COUNTRIES = ("NO", "SJ")  # mainland Norway and Svalbard
 
 
 def is_seaport(function_code: str) -> bool:
@@ -42,7 +47,7 @@ def fetch_ports() -> list[dict]:
             "coordinates": row["Coordinates"],
         }
         for row in reader
-        if row["Country"] == COUNTRY and is_seaport(row["Function"]) and row["Coordinates"]
+        if row["Country"] in COUNTRIES and is_seaport(row["Function"]) and row["Coordinates"]
     ]
 
 
@@ -55,7 +60,7 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(ports)
 
-    print(f"Wrote {len(ports)} Norwegian seaports to {SEED_PATH}")
+    print(f"Wrote {len(ports)} Norwegian and Svalbard seaports to {SEED_PATH}")
 
 
 if __name__ == "__main__":

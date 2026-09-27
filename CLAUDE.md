@@ -109,6 +109,10 @@ cd dashboard && npm run deploy
   ship's latest believable period (see `run_state_periods_transform`), so the
   work per run doesn't grow with history. Port calls are still rebuilt from
   every period of each changed ship. Watch that if usage climbs.
+- **`fact_port_call` is incremental.** Each run re-matches only ships with new
+  data. After changing the port list (`dbt/seeds`, from `scripts/fetch_ports.py`)
+  or the matching rules, start the Pipeline by hand on `master` with
+  "full_refresh" ticked, so older port calls are matched again.
 - **Root `.gitignore` ignores every `data/` folder.** The dashboard's loaders
   in `dashboard/src/data/*.py` are re-included explicitly, and CSVs there stay
   ignored.

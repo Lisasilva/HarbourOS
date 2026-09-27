@@ -18,6 +18,10 @@ on:
       collect_minutes:
         description: "Minutes to collect before building (use a small number to test)"
         default: "330"
+      full_refresh:
+        description: "Rebuild the Gold port calls from scratch (after changing the port list or matching rules)"
+        type: boolean
+        default: false
 
 # Never let two runs write to the warehouse at the same time.
 concurrency:
@@ -63,9 +67,19 @@ jobs:
       - name: Build Silver, state periods and port calls
         run: uv run python -m HarbourOS.transform
 
+      # The fact table is incremental: each run only re-matches ships with new
+      # data. When the port list or the matching rules change, the older rows
+      # need matching again, and "full_refresh" does that once.
       - name: Build the Gold star schema
         working-directory: dbt
-        run: uv run dbt build
+        env:
+          FULL_REFRESH: ${{ inputs.full_refresh }}
+        run: |
+          if [ "$FULL_REFRESH" = "true" ]; then
+            uv run dbt build --full-refresh
+          else
+            uv run dbt build
+          fi
 
       # Publish the dashboard. It runs only if every step above succeeded, so
       # the live site never shows a half-built warehouse. The Python data

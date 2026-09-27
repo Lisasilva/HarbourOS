@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: dim_port
-    description: Norwegian seaports from UN/LOCODE, positions in decimal degrees.
+    description: Norwegian and Svalbard seaports from UN/LOCODE, positions in decimal degrees.
     columns:
       - name: port_locode
         description: UN/LOCODE business key, e.g. NOBGO for Bergen.
