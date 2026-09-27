@@ -47,11 +47,15 @@ pytest tests/ -v
 
 
 ## Deployment
-Production pipeline runs hourly via GitHub Actions (pipeline.yml) against MotherDuck
-Dashboard is live at https://harbouros.pages.dev/
-(Note: exact deploy mechanism for the dashboard to this URL isn't fully
-captured in the repo yet — worth double-checking/documenting how this
-connects to Cloudflare Pages if that's what's serving it)
+- **Data pipeline**: runs hourly via GitHub Actions (pipeline.yml) against MotherDuck
+- **Dashboard**: deploys to https://harbouros.pages.dev/ via Cloudflare Pages
+  - Manual deploy (not connected to GitHub — a git push does NOT auto-update the live site)
+  - To deploy:
+    ```bash
+    cd dashboard && npm run build
+    npx wrangler pages deploy dist --project-name harbouros
+    ```
+  - ⚠️ Known issue: dashboard is currently a stale snapshot (frozen since the last manual deploy). Adding an auto-deploy step to `pipeline.yml` would fix this — see Phase 2 below.
 
 
 ## Making Changes

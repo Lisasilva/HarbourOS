@@ -13,6 +13,17 @@
 -- 0.4 km is solid, one at 9 km deserves suspicion. Beyond the cutoff we record
 -- no port at all rather than inventing one.
 --
+-- port_match grades that judgement instead of leaving it to the reader. Real
+-- data forced this: a Nesodden ferry docks at a commuter pier that is not in
+-- UN/LOCODE at all, so "nearest port" reached 2.65 km across the fjord and
+-- labelled every call Snaroya. The position was right to tens of metres; the
+-- reference list simply has no entry for that pier. The honest fix is not a
+-- tighter radius -- the distances form no natural break, so any cutoff would
+-- be chosen to suit one case -- but to say how far the evidence stretches.
+-- The at_port boundary is the reference data's own precision: one minute of
+-- arc, about 1.85 km. Closer than that is as exact as the source can be;
+-- further is a claim the source cannot support.
+--
 -- Haversine is computed in plain SQL rather than pulling in DuckDB's spatial
 -- extension: one formula, no runtime dependency, and exact enough for source
 -- data that is itself only accurate to about 2 km.
@@ -76,6 +87,11 @@ select
         then nearest.port_locode
     end as port_locode,
     round(nearest.distance_km, 2) as nearest_port_km,
+    case
+        when nearest.distance_km <= {{ var('port_at_km', 2) }} then 'at_port'
+        when nearest.distance_km <= {{ var('port_match_km', 10) }} then 'near_port'
+        else 'no_port'
+    end as port_match,
     cast(strftime(calls.arrival_time, '%Y%m%d') as integer) as arrival_date_key,
     calls.stop_type,
     calls.completeness,

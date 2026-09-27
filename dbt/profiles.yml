@@ -3,5 +3,5 @@ harbouros:
   outputs:
     dev:
       type: duckdb
-      path: "md:harbouros"
+      path: "{{ env_var('HARBOUROS_DB', 'md:harbouros') }}"
       threads: 4
