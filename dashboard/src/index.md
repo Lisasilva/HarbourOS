@@ -31,9 +31,20 @@ const filtered = calls.filter(
     (!completeOnly || d.completeness === "complete")
 );
 
-const medianStay = d3.median(filtered, (d) => d.minutes_alongside);
+// A ship still in port has no real stay length yet, so it's excluded from
+// the median and the stay-length chart rather than counted as a short (or
+// suspiciously long) visit.
+const settled = filtered.filter((d) => !d.in_port_now);
+const inPortNow = filtered.filter((d) => d.in_port_now).length;
+
+const medianStay = d3.median(settled, (d) => d.minutes_alongside);
 const vessels = new Set(filtered.map((d) => d.mmsi)).size;
 const atSea = calls.filter((d) => d.visit_type === "at_sea").length;
+
+const tableRows = filtered.map((d) => ({
+  ...d,
+  status: d.in_port_now ? "In port now" : d.completeness
+}));
 ```
 
 <div class="grid grid-cols-4">
@@ -42,12 +53,13 @@ const atSea = calls.filter((d) => d.visit_type === "at_sea").length;
     <span class="big">${filtered.length}</span>
   </div>
   <div class="card">
-    <h2>Vessels</h2>
-    <span class="big">${vessels}</span>
+    <h2>In port now</h2>
+    <span class="big">${inPortNow}</span>
   </div>
   <div class="card">
     <h2>Median stay</h2>
     <span class="big">${medianStay ? d3.format(",.0f")(medianStay) + " min" : "—"}</span>
+    <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 4px;">of ${settled.length} finished visits</div>
   </div>
   <div class="card">
     <h2>Stops at sea (all time)</h2>
@@ -60,7 +72,9 @@ state machine. Confidence reflects whether the ship's own reported status agrees
 its measured speed — a vessel broadcasting "moored" while making 7 knots scores low.
 A stop with no known seaport within 10 km is a rig, an anchorage or a fishing ground,
 not a port call — it's recorded as "at sea" rather than guessed at, and the "Port calls"
-view leaves it out by default. Switch "Visit" above to see it.
+view leaves it out by default. Switch "Visit" above to see it. A visit still marked
+"in port now" hasn't been seen leaving yet, so its stay length isn't final and it's left
+out of the stay-length numbers below until it is.
 
 <div class="grid grid-cols-2">
   <div class="card">
@@ -88,11 +102,12 @@ Plot.plot({
 ```js
 Plot.plot({
   title: "How long ships stayed",
+  subtitle: "Excludes visits still in port",
   height: 340,
   x: {label: "Minutes alongside", tickFormat: (d) => d3.format(",d")(d)},
   y: {label: "Visits", grid: true},
   marks: [
-    Plot.rectY(filtered, Plot.binX({y: "count"}, {x: "minutes_alongside", thresholds: 28, fill: "#4269d0", tip: true})),
+    Plot.rectY(settled, Plot.binX({y: "count"}, {x: "minutes_alongside", thresholds: 28, fill: "#4269d0", tip: true})),
     Plot.ruleY([0])
   ]
 })
@@ -133,7 +148,7 @@ Plot.plot({
 <div class="card">
 
 ```js
-Inputs.table(filtered, {
+Inputs.table(tableRows, {
   columns: [
     "vessel_name",
     "port_name",
@@ -142,7 +157,7 @@ Inputs.table(filtered, {
     "berth_start",
     "minutes_alongside",
     "confidence",
-    "completeness",
+    "status",
     "nearest_port_km"
   ],
   header: {
@@ -153,7 +168,7 @@ Inputs.table(filtered, {
     berth_start: "Arrived",
     minutes_alongside: "Minutes",
     confidence: "Confidence",
-    completeness: "Observed",
+    status: "Observed",
     nearest_port_km: "Port dist (km)"
   },
   sort: "berth_start",
