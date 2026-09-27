@@ -18,7 +18,7 @@
 -- data that is itself only accurate to about 2 km.
 --
 -- Incremental, and the reason is the cross join below: every visit is measured
--- against all 606 seaports. Rebuilding all visits every run means that cost
+-- against all 610 seaports. Rebuilding all visits every run means that cost
 -- grows with total history rather than with new data. Deletion is keyed on
 -- mmsi, not on port_call_key, because a vessel's visits are recomputed as a
 -- set -- if two visits merge into one, keying on the visit would strand the

@@ -1,8 +1,10 @@
 """Print derived port-call states for a ship, to eyeball against real data."""
+
 import sys
 from pathlib import Path
 
 import duckdb
+
 from HarbourOS.state_machine import derive_state_periods
 
 DB_PATH = Path("data/ais_bronze.duckdb")
