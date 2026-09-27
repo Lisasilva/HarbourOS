@@ -15,6 +15,7 @@ const portNames = d3.sort(new Set(calls.filter((d) => d.port_name).map((d) => d.
 
 const portPick = view(Inputs.select(["All ports", ...portNames], {label: "Port", value: "All ports"}));
 const stopPick = view(Inputs.select(["All", "berthed", "anchored"], {label: "Stop type", value: "All"}));
+const visitPick = view(Inputs.select(["Port calls", "All stops", "At sea only"], {label: "Visit", value: "Port calls"}));
 const minConfidence = view(Inputs.range([0, 1], {label: "Min confidence", step: 0.1, value: 0}));
 const completeOnly = view(Inputs.toggle({label: "Fully observed visits only", value: false}));
 ```
@@ -24,18 +25,20 @@ const filtered = calls.filter(
   (d) =>
     (portPick === "All ports" || d.port_name === portPick) &&
     (stopPick === "All" || d.stop_type === stopPick) &&
+    (visitPick === "All stops"
+      || (visitPick === "Port calls" ? d.visit_type === "port_call" : d.visit_type === "at_sea")) &&
     d.confidence >= minConfidence &&
     (!completeOnly || d.completeness === "complete")
 );
 
 const medianStay = d3.median(filtered, (d) => d.minutes_alongside);
 const vessels = new Set(filtered.map((d) => d.mmsi)).size;
-const matched = filtered.filter((d) => d.port_name).length;
+const atSea = calls.filter((d) => d.visit_type === "at_sea").length;
 ```
 
 <div class="grid grid-cols-4">
   <div class="card">
-    <h2>Port calls</h2>
+    <h2>${visitPick === "At sea only" ? "Stops at sea" : "Port calls"}</h2>
     <span class="big">${filtered.length}</span>
   </div>
   <div class="card">
@@ -47,15 +50,17 @@ const matched = filtered.filter((d) => d.port_name).length;
     <span class="big">${medianStay ? d3.format(",.0f")(medianStay) + " min" : "—"}</span>
   </div>
   <div class="card">
-    <h2>Matched to a port</h2>
-    <span class="big">${filtered.length ? d3.format(".0%")(matched / filtered.length) : "—"}</span>
+    <h2>Stops at sea (all time)</h2>
+    <span class="big">${d3.format(",")(atSea)}</span>
   </div>
 </div>
 
 A *port call* is one vessel stopping once, derived from raw AIS position reports by a
 state machine. Confidence reflects whether the ship's own reported status agrees with
 its measured speed — a vessel broadcasting "moored" while making 7 knots scores low.
-Visits with no known seaport within 10 km are recorded as unmatched rather than guessed.
+A stop with no known seaport within 10 km is a rig, an anchorage or a fishing ground,
+not a port call — it's recorded as "at sea" rather than guessed at, and the "Port calls"
+view leaves it out by default. Switch "Visit" above to see it.
 
 <div class="grid grid-cols-2">
   <div class="card">
@@ -132,6 +137,7 @@ Inputs.table(filtered, {
   columns: [
     "vessel_name",
     "port_name",
+    "visit_type",
     "stop_type",
     "berth_start",
     "minutes_alongside",
@@ -142,6 +148,7 @@ Inputs.table(filtered, {
   header: {
     vessel_name: "Vessel",
     port_name: "Port",
+    visit_type: "Visit",
     stop_type: "Stop",
     berth_start: "Arrived",
     minutes_alongside: "Minutes",
