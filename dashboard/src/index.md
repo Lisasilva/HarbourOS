@@ -765,7 +765,7 @@ function mixBar(rows) {
 
 ```js
 {
-  const finished = weekShown.filter((d) => !d.in_port_now).map((d) => ({...d, hours: Math.min(d.minutes_alongside / 60, 48)}));
+  const finished = weekShown.filter((d) => !d.in_port_now).map((d) => ({...d, hours: Math.min(d.minutes_alongside / 60, 47.9)}));
   display(resize((width) =>
     Plot.plot({
       height: 360,

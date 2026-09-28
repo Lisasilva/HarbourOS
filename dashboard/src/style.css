@@ -239,8 +239,9 @@ a {
 }
 
 .map-canvas {
-  position: absolute;
-  inset: 0;
+  /* MapLibre makes its container position: relative, so size it directly. */
+  width: 100%;
+  height: 100%;
 }
 
 .map-key {
@@ -448,8 +449,16 @@ a {
     max-height: 45%;
   }
 
+  .replay {
+    gap: 0.45rem;
+  }
+
   .replay output {
-    min-width: 0;
+    display: none;
+  }
+
+  .map-panel {
+    bottom: 70px;
   }
 
   .map-key {
