@@ -43,11 +43,18 @@ const browser = await chromium.launch({channel: process.env.CHROME_CHANNEL || un
 async function open(viewport) {
   const page = await browser.newPage({viewport, deviceScaleFactor: 1});
   page.on("pageerror", (e) => report.push(`page error: ${e.message}`));
-  page.on("console", (m) => m.type() === "error" && report.push(`console error: ${m.text()}`));
+  page.on("console", (m) => ["error", "warning"].includes(m.type()) && report.push(`console ${m.type()}: ${m.text()}`));
+  page.on("requestfailed", (r) => report.push(`request failed: ${r.url()} ${r.failure()?.errorText}`));
   await page.goto("http://localhost:8765/", {waitUntil: "networkidle"});
-  await page.waitForFunction(() => window.__harbourMap?.loaded(), null, {timeout: 60_000});
+  const loaded = await page
+    .waitForFunction(() => window.__harbourMap, null, {timeout: 60_000})
+    .then(() => true, () => false);
+  if (!loaded) {
+    report.push("the map did not finish loading");
+    report.push(`page text: ${(await page.locator("main").innerText()).replace(/\s+/g, " ").slice(0, 1500)}`);
+  }
   await page.waitForTimeout(4000);
-  return page;
+  return {page, loaded};
 }
 
 // Click the screen position of the first feature in a map layer.
@@ -66,9 +73,10 @@ async function clickFeature(page, layer) {
   return point.name;
 }
 
-const page = await open({width: 1440, height: 1000});
+const {page, loaded} = await open({width: 1440, height: 1000});
 await page.screenshot({path: `${out}/1-page.png`});
 await page.screenshot({path: `${out}/2-full-page.png`, fullPage: true});
+if (loaded) {
 report.push(`kpis: ${(await page.locator(".kpi .value").allInnerTexts()).join(" | ")}`);
 report.push(`ships drawn: ${await page.evaluate(() => window.__harbourMap.querySourceFeatures("ships").length)}`);
 
@@ -92,9 +100,10 @@ await range.evaluate((el) => {
 });
 await page.waitForTimeout(2000);
 await map.screenshot({path: `${out}/6-replay.png`});
+}
 await page.close();
 
-const phone = await open({width: 390, height: 844});
+const {page: phone} = await open({width: 390, height: 844});
 await phone.screenshot({path: `${out}/7-phone.png`, fullPage: true});
 await phone.close();
 

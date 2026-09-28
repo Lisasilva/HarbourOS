@@ -349,10 +349,10 @@ const map = await (async () => {
     attributionControl: {compact: true}
   });
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
-  // For the preview workflow's screenshots (dashboard/scripts/screenshots.mjs).
-  window.__harbourMap = m;
   invalidation.then(() => m.remove());
   await new Promise((resolve) => m.on("load", resolve));
+  // For the preview workflow's screenshots (dashboard/scripts/screenshots.mjs).
+  window.__harbourMap = m;
 
   for (const g of GROUPS) {
     m.addImage(`arrow-${g.key}`, arrowIcon(g.color), {pixelRatio: 2});
