@@ -3,5 +3,6 @@ harbouros:
   outputs:
     dev:
       type: duckdb
-      path: "md:harbouros"
+      # Same warehouse as the Python steps. Production sets md:harbouros.
+      path: "{{ env_var('HARBOUROS_DB', 'md:harbouros') }}"
       threads: 4

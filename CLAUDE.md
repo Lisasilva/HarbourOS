@@ -103,9 +103,9 @@ cd dashboard && npm run deploy
 
 ## Known Facts and Gotchas
 - **Production is `pipeline.yml`, not Dagster.** `src/HarbourOS/orchestration.py`
-  is a local and dev alternative that production doesn't run. Its bronze asset
-  still calls `ingest_batch(limit=100)`, the same 100-ship cap that
-  `ingestion.py` warns about.
+  is the same chain for local runs (`uv run dagster dev -m HarbourOS.orchestration`)
+  and production doesn't run it. It keeps every ship (the old 100-ship cap was
+  removed on 2026-09-28).
 - **GitHub cron is unreliable.** Hourly top-of-the-hour runs actually started
   every 3–6 hours, and on 2026-09-28 an hourly :17 trigger skipped almost two
   hours. That is why collection happens *inside* a run (a snapshot every 10
@@ -135,14 +135,20 @@ cd dashboard && npm run deploy
   dbt that breaks on 3.14 (see the orchestration.py docstring).
 
 ## Roadmap (agreed with Maria, 2026-09-26)
-Done: automatic dashboard deploy (PR #1), Node 24 actions (PR #2).
-Next, roughly in priority order:
-1. Make the pipeline run on time (it runs every 3–6 hours, not hourly), since
-   that directly limits port-call accuracy.
-2. Data-quality audit of Silver and Gold: stops at sea, impossible stay
-   lengths, unmatched ports, the share of `both_unobserved` visits.
-3. Show "data last updated" on the dashboard, plus a failure alert.
-4. Remove or fix the Dagster `limit=100` cap, and pick one orchestration story.
-5. Refresh `README.md`: it mentions `docker compose`, but no compose file exists.
-6. Dashboard redesign: propose first, and wait for approval.
+Done:
+- Automatic dashboard deploy (PR #1), Node 24 actions (PR #2).
+- 1. Pipeline runs on time: 10-minute collection (PR #4), each run starting the
+  next (PR #11).
+- 2. Data-quality audit (PR #5), its fixes (PRs #6-#8), and a re-run on
+  2026-09-28: 78% of visits now fully observed.
+- 3. "Data last updated" on the dashboard (PR #12) and a failure alert issue
+  (PR #11).
+- 4. Dagster's 100-ship cap removed; GitHub Actions is production, Dagster is
+  for local runs.
+- 5. README rewritten.
+
+Next:
+6. Dashboard redesign: propose first, and wait for approval. Include what the
+   2026-09-28 audit found: ~1,600 stops 10-25 km from a listed port (likely
+   quays missing from UN/LOCODE), and ferry quays crowding "busiest ports".
 7. Portfolio write-up of the architecture, published as an artifact.
