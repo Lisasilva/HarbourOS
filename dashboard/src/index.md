@@ -776,8 +776,7 @@ function mixBar(rows) {
 ```js
 {
   // Only visits seen from arrival to departure: when a ship drops out of
-  // sight, its stay ends where the sightings stopped, not when it left, and
-  // a single collection gap turned hundreds of those into one false peak.
+  // sight, its stay ends where the sightings stopped, not when it left.
   const finished = weekShown.filter((d) => d.completeness === "complete").map((d) => ({...d, hours: Math.min(d.minutes_alongside / 60, 47.9)}));
   display(resize((width) =>
     Plot.plot({
