@@ -5,8 +5,8 @@ name: Pipeline
 # (Runs used to collect for 330 minutes; that is still the way to go back to
 # about 4 updates a day and less MotherDuck compute: change the two "50"s.)
 #
-# The state machine can only join sightings of a ship that are at most 30 minutes apart, so one snapshot
-# per run was never enough: GitHub starts scheduled runs hours late, and the
+# The state machine can only join sightings of a ship that are at most 30
+# minutes apart, so one snapshot per run was never enough: GitHub starts scheduled runs hours late, and the
 # gaps swallowed the port calls.
 #
 # The schedule fires hourly, at :17 because GitHub is busiest on the hour.
