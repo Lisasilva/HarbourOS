@@ -9,13 +9,16 @@ name: Pipeline
 # minutes apart, so one snapshot per run was never enough: GitHub starts
 # scheduled runs hours late, and the gaps swallowed the port calls.
 #
-# The schedule fires hourly, at :17 because GitHub is busiest on the hour.
-# While a run is collecting, the concurrency group below holds the next one in
-# the queue, so a new run starts as soon as the last one finishes and the
-# collection is close to continuous.
+# Each run on master starts the next one when it ends (the last step below),
+# so collection never pauses. GitHub's own schedule can't be trusted for that:
+# on 2026-09-28 no hourly trigger fired for almost two hours. The schedule
+# stays only as a backstop that restarts the chain if it ever breaks, for
+# example after a run is cancelled by hand. While a run is collecting, the
+# concurrency group below keeps at most one more run waiting, so the chain and
+# the backstop never pile up; one that gets replaced shows as "cancelled".
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       collect_minutes:
@@ -38,6 +41,12 @@ jobs:
     # minutes, but a manual one can ask for up to about 330; the rest is
     # setup, transforms, dbt and the dashboard.
     timeout-minutes: 355
+
+    permissions:
+      contents: read
+      # To start the next run, and to open or close the failure-alert issue.
+      actions: write
+      issues: write
 
     env:
       # The warehouse is MotherDuck, not a local file.
@@ -119,3 +128,41 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dashboard/dist --project-name harbouros --commit-dirty=true
+
+      # Tell Maria when a run fails: GitHub emails her about new issues and
+      # comments. One open issue collects all failures until a run succeeds.
+      - name: Open or update the failure alert
+        if: failure() && github.ref_name == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search 'in:title "Pipeline is failing"' --json number --jq '.[0].number')
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --assignee "$GITHUB_REPOSITORY_OWNER" \
+              --title "Pipeline is failing" \
+              --body "Run $RUN_URL failed, so the dashboard was not updated. This issue closes itself when a run succeeds."
+          fi
+
+      - name: Close the failure alert
+        if: success() && github.ref_name == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          for issue in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+              --search 'in:title "Pipeline is failing"' --json number --jq '.[].number'); do
+            gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment "Fixed: $RUN_URL succeeded."
+          done
+
+      # Start the next run, whether this one succeeded or failed, so collection
+      # carries on. Not after a cancel (someone stopped it on purpose), and not
+      # on test branches.
+      - name: Start the next run
+        if: ${{ !cancelled() && github.ref_name == 'master' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pipeline.yml --repo "$GITHUB_REPOSITORY" --ref master

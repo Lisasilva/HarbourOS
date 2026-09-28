@@ -52,9 +52,10 @@ Everything deploys automatically from `.github/workflows/pipeline.yml`
 1. Collects live AIS positions every 10 minutes for 50 minutes
    (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
    states and port calls and runs `dbt build` (all against MotherDuck,
-   `HARBOUROS_DB=md:harbouros`). The schedule fires hourly, and the concurrency
-   group queues the next run behind the current one, so collection is nearly
-   continuous and the site updates about every hour (runs collected for 330
+   `HARBOUROS_DB=md:harbouros`). Each run on `master` starts the next one when
+   it ends (a 6-hourly schedule only restarts the chain if it breaks, e.g.
+   after a run is cancelled by hand), so collection is continuous and the site
+   updates about every hour (runs collected for 330
    minutes and updated about 4 times a day until 2026-09-28; hourly is for
    testing and costs about 6 times the MotherDuck compute). For a quick manual
    test, set "collect_minutes" to something small.
@@ -63,6 +64,9 @@ Everything deploys automatically from `.github/workflows/pipeline.yml`
    from MotherDuck at build time, so no exported CSV is committed.
 3. Publish the build to Cloudflare Pages project `harbouros`
    → https://harbouros.pages.dev/
+4. On `master` only: if any step failed, open (or comment on) a GitHub issue
+   titled "Pipeline is failing", assigned to Maria, so GitHub emails her. The
+   next successful run closes it.
 
 The Cloudflare Pages project is not connected to GitHub, so a `git push` alone
 does not update the site; the pipeline run does. A failed run leaves the
@@ -103,9 +107,12 @@ cd dashboard && npm run deploy
   still calls `ingest_batch(limit=100)`, the same 100-ship cap that
   `ingestion.py` warns about.
 - **GitHub cron is unreliable.** Hourly top-of-the-hour runs actually started
-  every 3–6 hours. That is why collection happens *inside* a long run (a
-  snapshot every 10 minutes) rather than one snapshot per scheduled run: the
-  state machine only joins sightings at most 30 minutes apart (`MAX_GAP`).
+  every 3–6 hours, and on 2026-09-28 an hourly :17 trigger skipped almost two
+  hours. That is why collection happens *inside* a run (a snapshot every 10
+  minutes) and each run starts the next one itself: the state machine only
+  joins sightings at most 30 minutes apart (`MAX_GAP`). A run started by
+  `GITHUB_TOKEN` via `workflow_dispatch` is one of the few events GitHub lets
+  that token trigger.
 - **Stay inside MotherDuck's free plan (10 compute hours a month).** Snapshots
   are uploaded once per run, and state periods are rebuilt only from each
   ship's latest believable period (see `run_state_periods_transform`), so the
