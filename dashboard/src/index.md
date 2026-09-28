@@ -349,8 +349,9 @@ const map = await (async () => {
     zoom: 4.1,
     minZoom: 3,
     maxZoom: 14,
-    attributionControl: {compact: true}
+    attributionControl: false
   });
+  m.addControl(new maplibregl.AttributionControl({compact: true}), "bottom-left");
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
   invalidation.then(() => m.remove());
   await new Promise((resolve) => m.on("load", resolve));
@@ -701,6 +702,15 @@ function stopStrip(visits) {
         insetBottom: 3,
         rx: 3,
         title: (d) => `${d.port_name ?? "At sea"}\n${when(d.berth_start)}\n${d.in_port_now ? "still there" : stay(d.minutes_alongside)} · ${confidenceBand(d.confidence)} confidence`
+      }),
+      // A dot at each arrival, so short stops still show at a week's scale.
+      Plot.dot(visits, {
+        x: "berth_start",
+        y: (d) => d.port_name ?? "At sea",
+        r: 3.5,
+        fill: (d) => ({high: "#25344F", medium: "#617891", low: "#D5B893"})[confidenceBand(d.confidence)],
+        stroke: "#fffdf9",
+        strokeWidth: 1
       })
     ]
   });

@@ -135,6 +135,10 @@ a {
 
 /* ---- Filter chips (also the map legend) ---- */
 
+.chips {
+  max-width: none;
+}
+
 .chips form {
   --input-width: 100%;
   width: 100%;
@@ -346,6 +350,7 @@ a {
 
 .map-panel li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.35rem 0;
@@ -422,6 +427,11 @@ a {
   min-width: 11.5rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Map credits sit above the ship key, clear of the replay bar and panel. */
+.map-card .maplibregl-ctrl-bottom-left {
+  bottom: 96px;
 }
 
 .maplibregl-popup-content {
