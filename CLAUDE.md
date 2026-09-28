@@ -49,13 +49,15 @@ pytest tests/ -v
 ## Deployment
 Everything deploys automatically from `.github/workflows/pipeline.yml`
 (and it can be started by hand from the Actions tab). Each run:
-1. Collects live AIS positions every 10 minutes for ~5½ hours
+1. Collects live AIS positions every 10 minutes for 50 minutes
    (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
    states and port calls and runs `dbt build` (all against MotherDuck,
    `HARBOUROS_DB=md:harbouros`). The schedule fires hourly, and the concurrency
    group queues the next run behind the current one, so collection is nearly
-   continuous and the site updates about 4 times a day. For a quick manual test,
-   set "collect_minutes" to something small.
+   continuous and the site updates about every hour (runs collected for 330
+   minutes and updated about 4 times a day until 2026-09-28; hourly is for
+   testing and costs about 6 times the MotherDuck compute). For a quick manual
+   test, set "collect_minutes" to something small.
 2. If all of that succeeds, build the dashboard (`dashboard/`). Its data
    loader `dashboard/src/data/port_calls.csv.py` reads the fresh Gold tables
    from MotherDuck at build time, so no exported CSV is committed.
