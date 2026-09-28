@@ -8,7 +8,30 @@ toc: false
 
 ```js
 const calls = FileAttachment("data/port_calls.csv").csv({typed: true});
+const freshness = FileAttachment("data/freshness.json").json();
 ```
+
+```js
+// AIS times are UTC; show them in the visitor's own time zone, with how long
+// ago that was, so a stalled pipeline is visible at a glance.
+const minuteClock = Generators.observe((notify) => {
+  notify(Date.now());
+  const id = setInterval(() => notify(Date.now()), 60_000);
+  return () => clearInterval(id);
+});
+```
+
+```js
+const latestReading = freshness.latest_reading ? new Date(freshness.latest_reading) : null;
+const hoursOld = latestReading ? (minuteClock - latestReading) / 36e5 : null;
+const ago = (h) => (h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 48 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} days ago`);
+```
+
+<p style="font-size: 0.85rem; opacity: 0.8; margin-top: -0.5rem;">
+  ${latestReading
+    ? html`Data last updated ${latestReading.toLocaleString(undefined, {dateStyle: "medium", timeStyle: "short"})} (${ago(hoursOld)})${hoursOld > 3 ? html` · <strong>updates may be paused</strong>` : ""}`
+    : "No data yet"}
+</p>
 
 ```js
 const portNames = d3.sort(new Set(calls.filter((d) => d.port_name).map((d) => d.port_name)));
@@ -185,5 +208,6 @@ Python polls the BarentsWatch AIS API into a Bronze table; SQL deduplicates and 
 into Silver, quarantining every rejected row with a reason rather than dropping it; a
 Python state machine derives confidence-scored voyage states; those become port-call
 events; dbt builds the star schema and matches each visit to the nearest UN/LOCODE
-seaport. Dagster runs the whole chain on a schedule. This page is a static snapshot of
+seaport. GitHub Actions runs the whole chain about once an hour and republishes this
+page each time. This page is a static snapshot of
 the Gold layer — no database is exposed to the internet.
