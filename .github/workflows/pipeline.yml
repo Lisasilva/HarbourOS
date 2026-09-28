@@ -70,15 +70,26 @@ jobs:
       # The fact table is incremental: each run only re-matches ships with new
       # data. When the port list or the matching rules change, the older rows
       # need matching again, and "full_refresh" does that once.
+      #
+      # When the model gains or loses a column, an incremental run can't
+      # update the existing table, so dbt stops with "schemas ... are out of
+      # sync". That is expected after such a change, so rebuild from scratch
+      # instead of failing every run until someone does it by hand.
       - name: Build the Gold star schema
         working-directory: dbt
         env:
           FULL_REFRESH: ${{ inputs.full_refresh }}
         run: |
+          set -o pipefail
           if [ "$FULL_REFRESH" = "true" ]; then
             uv run dbt build --full-refresh
+          elif uv run dbt build | tee dbt-build.log; then
+            :
+          elif grep -q "schemas on this incremental model are out of sync" dbt-build.log; then
+            echo "::warning::The fact table's columns changed; rebuilding it from scratch"
+            uv run dbt build --full-refresh
           else
-            uv run dbt build
+            exit 1
           fi
 
       # Publish the dashboard. It runs only if every step above succeeded, so

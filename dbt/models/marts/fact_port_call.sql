@@ -1,7 +1,8 @@
 {{ config(
     materialized='incremental',
     incremental_strategy='delete+insert',
-    unique_key='mmsi'
+    unique_key='mmsi',
+    on_schema_change='fail'
 ) }}
 
 -- The fact table. Grain: one vessel stopping once.
@@ -29,6 +30,11 @@
 -- mmsi, not on port_call_key, because a vessel's visits are recomputed as a
 -- set -- if two visits merge into one, keying on the visit would strand the
 -- stale row.
+--
+-- on_schema_change='fail': an incremental run never adds a new column to the
+-- existing table, so a column added here would be missing in the warehouse
+-- until someone ran a full refresh. Failing loudly lets the pipeline notice
+-- and rebuild the table from scratch (see .github/workflows/pipeline.yml).
 
 with calls as (
     select * from {{ ref('stg_port_calls') }}
