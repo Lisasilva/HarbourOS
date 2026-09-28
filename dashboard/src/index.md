@@ -2,11 +2,12 @@
 title: Live ship traffic
 ---
 
-<link rel="stylesheet" href="npm:maplibre-gl@6/dist/maplibre-gl.css">
+<link rel="stylesheet" href="npm:maplibre-gl@5/dist/maplibre-gl.css">
 
 ```js
-import * as maplibreModule from "npm:maplibre-gl@6";
-// MapLibre 6 ships named exports; older builds had one default export.
+import * as maplibreModule from "npm:maplibre-gl@5";
+// MapLibre 5, whose single bundle carries its own worker; version 6 loads the
+// worker as a separate file, which Framework does not copy into the build.
 const maplibregl = maplibreModule.default ?? maplibreModule;
 ```
 
