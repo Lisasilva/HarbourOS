@@ -29,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      # To push the screenshots to the preview-screenshots branch.
+      contents: write
 
     env:
       HARBOUROS_DB: md:harbouros
@@ -73,10 +74,29 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dashboard/dist --project-name harbouros --branch ${{ github.ref_name }} --commit-dirty=true
 
-      # The built site, for checking a preview without opening the address.
-      - name: Keep the built site
-        uses: actions/upload-artifact@v5
-        with:
-          name: dashboard-dist
-          path: dashboard/dist
-          retention-days: 3
+      # Pictures of the preview, pushed to the preview-screenshots branch
+      # (one folder per branch), so it can be checked from GitHub or a clone.
+      # Only a helper for reviewing: it never fails the run.
+      - name: Take screenshots
+        continue-on-error: true
+        working-directory: dashboard
+        env:
+          CHROME_CHANNEL: chrome
+          SHOTS_BRANCH: preview-screenshots
+          SOURCE_BRANCH: ${{ github.ref_name }}
+        run: |
+          npm install --no-save playwright@1
+          node scripts/screenshots.mjs dist "$RUNNER_TEMP/shots"
+          cd "$RUNNER_TEMP"
+          git clone --quiet --depth 1 --branch "$SHOTS_BRANCH" \
+            "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git" repo \
+            || { git init --quiet repo && git -C repo checkout --quiet -b "$SHOTS_BRANCH" \
+                 && git -C repo remote add origin "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git"; }
+          rm -rf "repo/$SOURCE_BRANCH" && mkdir -p "repo/$SOURCE_BRANCH"
+          cp shots/* "repo/$SOURCE_BRANCH/"
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Screenshots of $SOURCE_BRANCH at ${GITHUB_SHA::7}"
+          git push --quiet origin "$SHOTS_BRANCH"

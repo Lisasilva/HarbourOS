@@ -349,6 +349,8 @@ const map = await (async () => {
     attributionControl: {compact: true}
   });
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
+  // For the preview workflow's screenshots (dashboard/scripts/screenshots.mjs).
+  window.__harbourMap = m;
   invalidation.then(() => m.remove());
   await new Promise((resolve) => m.on("load", resolve));
 
