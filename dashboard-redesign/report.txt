@@ -1,16 +1,11 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0xea40175d800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0xea40175d800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0xea40175d800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0xea40175d800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console warning: [.WebGL-0x31d4019a7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x31d4019a7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x31d4019a7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x31d4019a7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,572 | 636 | 2,776 | 13,185
 ships drawn: 5661
 clicked moving ship: SUNNY 268
-ship panel: × Cargo · MMSI 630001326 SUNNY 268 Under way at 11.0 knots, heading NE. Last seen Mon, Sep 28, 08:47 PM (34 min ago) 537 nautical miles sailed (3 days) 0 port calls this week – typical stay LATEST STOPS No stops recorded yet.
-request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/17/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/17/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/16/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/16/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/18/8.pbf net::ERR_ABORTED
+ship panel: × Cargo · MMSI 630001326 SUNNY 268 Under way at 11.0 knots, heading NE. Last seen Mon, Sep 28, 08:47 PM (38 min ago) 537 nautical miles sailed (3 days) 0 port calls this week – typical stay LATEST STOPS No stops recorded yet.
 clicked port: Glomfjord
 console warning: using deprecated parameters for the initialization function; pass a single object instead
