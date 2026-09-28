@@ -1,16 +1,73 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-request failed: http://localhost:8765/npm/maplibre-gl@6.11.2/dist/maplibre-gl-worker.mjs net::ERR_FAILED
-console error: Error: Worker failed to load. Check that the worker URL is correct.
-    at Worker.<anonymous> (http://localhost:8765/_npm/maplibre-gl@6.11.2/356c9cfd.js:8:361285)
-console error: Error: Worker failed to load. Check that the worker URL is correct.
-    at Worker.<anonymous> (http://localhost:8765/_npm/maplibre-gl@6.11.2/356c9cfd.js:8:361285)
-the map did not finish loading
-page text: HarbourOS Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds. Data last updated Mon, Sep 28, 09:01 PM (6 min ago) Cargo 1,184 Tanker 109 Passenger & ferries 486 Fishing 545 Tugs & service 429 Other 819 Ships on the map now 3,572 seen in the last 2 hours Under way 636 moving at 1 knot or more In port now 2,776 arrived and not yet seen leaving Port calls this week 13,185 at 493 ports OpenFreeMap © OpenMapTiles Data from OpenStreetMap moving stopped port Explore the coast Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours. BUSIEST PORTS RIGHT NOW Kristiansund 38 ships in port Tromso 38 ships in port Stavanger 37 ships in port Alesund 37 ships in port Oslo 34 ships in port Maloy 34 ships in port ▶ Play Live · Mon, Sep 28, 09:01 PM Live This week at a glance Port calls in the 7 days up to the latest data, for the ship types picked above. Busiest ports Port calls, split by ship type Cargo Tanker Passenger & ferries Fishing Tugs & service Other Stavanger Kristiansund Alesund Oslo Svolvar Osan Maloy Bergen Sandnessjoen Tromso Kristiansand Fredrikstad Hammerfest 0 50 100 150 Port calls → How long ships stay Finished port calls, by hours alongside (stays over 48 hours in the last bar) 0 1,000 2,000 3,000 4,000 5,000 6,000 ↑ Port calls 0 6 12 24 36 48 Hours in port → How close to a known port? Every stop is matched to the nearest official (UN/LOCOD
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+kpis: 3,572 | 636 | 2,776 | 13,185
+ships drawn: 5661
+clicked moving ship: SUNNY 268
+ship panel: Explore the coast Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours. BUSIEST PORTS RIGHT NOW Kristiansund 38 ships in port Tromso 38 ships in port Stavanger 37 ships in port Alesund 37 ships in port Oslo 34 ships in port
+clicked port: Glomfjord
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-request failed: http://localhost:8765/npm/maplibre-gl@6.11.2/dist/maplibre-gl-worker.mjs net::ERR_FAILED
-console error: Error: Worker failed to load. Check that the worker URL is correct.
-    at Worker.<anonymous> (http://localhost:8765/_npm/maplibre-gl@6.11.2/356c9cfd.js:8:361285)
-console error: Error: Worker failed to load. Check that the worker URL is correct.
-    at Worker.<anonymous> (http://localhost:8765/_npm/maplibre-gl@6.11.2/356c9cfd.js:8:361285)
-the map did not finish loading
-page text: HarbourOS Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds. Data last updated Mon, Sep 28, 09:01 PM (7 min ago) Cargo 1,184 Tanker 109 Passenger & ferries 486 Fishing 545 Tugs & service 429 Other 819 Ships on the map now 3,572 seen in the last 2 hours Under way 636 moving at 1 knot or more In port now 2,776 arrived and not yet seen leaving Port calls this week 13,185 at 493 ports OpenFreeMap © OpenMapTiles Data from OpenStreetMap Explore the coast Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours. BUSIEST PORTS RIGHT NOW Kristiansund 38 ships in port Tromso 38 ships in port Stavanger 37 ships in port Alesund 37 ships in port Oslo 34 ships in port Maloy 34 ships in port ▶ Play Live · Mon, Sep 28, 09:01 PM Live This week at a glance Port calls in the 7 days up to the latest data, for the ship types picked above. Busiest ports Port calls, split by ship type Cargo Tanker Passenger & ferries Fishing Tugs & service Other Stavanger Kristiansund Alesund Oslo Svolvar Osan Maloy Bergen Sandnessjoen Tromso Kristiansand Fredrikstad Hammerfest 0 100 Port calls → How long ships stay Finished port calls, by hours alongside (stays over 48 hours in the last bar) 0 1,000 2,000 3,000 4,000 5,000 6,000 ↑ Port calls 0 6 12 24 36 48 Hours in port → How close to a known port? Every stop is matched to the nearest official (UN/LOCODE) port. Stops far from any
