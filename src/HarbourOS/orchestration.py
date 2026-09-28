@@ -1,9 +1,15 @@
-"""Dagster orchestration: the pipeline as a dependency graph, on a schedule.
+"""Dagster orchestration: the pipeline as a dependency graph, for local runs.
 
-Until now each layer was run by hand, in the right order, by remembering the
-right order. Dagster makes that order explicit and enforced: every table is an
-asset that declares its upstreams, so the system works out what to run and
-when, keeps run history, and retries what fails.
+Production does not use this file. The live pipeline is
+.github/workflows/pipeline.yml, which collects for about an hour per run and
+starts the next run itself (see CLAUDE.md). This is the same chain for a
+laptop: every table is an asset that declares its upstreams, so Dagster works
+out what to run and in what order, keeps run history, and shows the lineage in
+its UI (`uv run dagster dev -m HarbourOS.orchestration`).
+
+Each scheduled run takes one snapshot of every ship. The 15-minute schedule
+keeps consecutive sightings of a ship inside the state machine's 30-minute
+MAX_GAP, so visits join up as they do in production.
 
 Note on dbt: the dagster-dbt integration (which would expose each dbt model as
 its own asset) pins dbt-core below 1.12, and that older dbt pulls a mashumaro
@@ -43,8 +49,8 @@ GOLD_KEY = AssetKey(["harbouros", "gold_star_schema"])
 
 @asset(key=BRONZE_KEY, compute_kind="python", group_name="ingestion")
 def ais_messages_bronze(context: AssetExecutionContext) -> None:
-    """Raw AIS positions polled from the BarentsWatch live API."""
-    ingest_batch(limit=100)
+    """Raw AIS positions polled from the BarentsWatch live API, every ship."""
+    ingest_batch()
 
 
 @asset(key=SILVER_KEY, deps=[BRONZE_KEY], compute_kind="sql", group_name="cleaning")
