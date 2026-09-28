@@ -5,6 +5,7 @@ from pathlib import Path
 
 import duckdb
 
+from HarbourOS.port_calls import RULES_VERSION as PORT_CALL_RULES_VERSION
 from HarbourOS.port_calls import derive_port_calls
 from HarbourOS.state_machine import DWELL_READINGS, StatePeriod, derive_state_periods
 from HarbourOS.storage import (
@@ -15,8 +16,10 @@ from HarbourOS.storage import (
     initialize_silver_tables,
     initialize_state_periods_table,
     record_progress,
+    record_rules_version,
     replace_port_calls_for_ships,
     replace_state_periods_since,
+    rules_version,
 )
 
 SQL_DIR = Path("sql")
@@ -215,15 +218,19 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
         raise ValueError(f"State periods cover {covered} readings but Silver holds {silver_rows}")
 
 
-def run_port_calls_transform(db_path: Path | str = DB_PATH, rebuild_all: bool = False) -> None:
+def run_port_calls_transform(db_path: Path | str = DB_PATH, rebuild_all: bool = False) -> bool:
     """Rebuild port calls for the ships whose state periods have changed.
 
-    rebuild_all re-derives every ship's port calls, for when the rules that
-    turn state periods into port calls change: ships with no new data would
-    otherwise keep visits derived under the old rules.
+    Every ship is re-derived instead when rebuild_all is set, or when the
+    port-call rules (port_calls.RULES_VERSION) have changed since the last
+    run: ships with no new data would otherwise keep visits derived under the
+    old rules. Returns whether every ship was rebuilt, since the Gold fact
+    table then needs a full refresh too.
     """
     initialize_port_calls_table(db_path=db_path)
     initialize_progress_table(db_path=db_path)
+    rules_changed = rules_version("port_calls", db_path=db_path) != PORT_CALL_RULES_VERSION
+    rebuild_all = rebuild_all or rules_changed
 
     con = connect(db_path)
     stale = con.sql(
@@ -274,6 +281,7 @@ def run_port_calls_transform(db_path: Path | str = DB_PATH, rebuild_all: bool = 
 
     replace_port_calls_for_ships(all_calls, list(watermarks), db_path=db_path)
     record_progress("port_calls", watermarks, db_path=db_path)
+    record_rules_version("port_calls", PORT_CALL_RULES_VERSION, db_path=db_path)
 
     con = connect(db_path)
     total_calls = fetch_number(con, "SELECT COUNT(*) FROM port_call_events")
@@ -285,6 +293,7 @@ def run_port_calls_transform(db_path: Path | str = DB_PATH, rebuild_all: bool = 
     print(f"Ships rebuilt:    {len(watermarks)}")
     print(f"Port-call events: {total_calls} (all ships)")
     print(f"Fully observed:   {complete}")
+    return rebuild_all
 
 
 if __name__ == "__main__":
@@ -293,4 +302,10 @@ if __name__ == "__main__":
     run_state_periods_transform()
     print()
     # Set by the Pipeline's "full_refresh" box, alongside dbt's full refresh.
-    run_port_calls_transform(rebuild_all=os.environ.get("REBUILD_PORT_CALLS") == "true")
+    rebuilt_all = run_port_calls_transform(
+        rebuild_all=os.environ.get("REBUILD_PORT_CALLS") == "true"
+    )
+    # Tells the Pipeline to rebuild the Gold fact table from scratch as well:
+    # it only re-matches ships whose inputs are newer, and these aren't.
+    if rebuilt_all:
+        Path("port-calls-rebuilt").touch()

@@ -77,8 +77,10 @@ jobs:
           COLLECT_MINUTES: ${{ inputs.collect_minutes || '50' }}
         run: uv run python -m HarbourOS.collect --minutes "$COLLECT_MINUTES" --every 10
 
-      # "full_refresh" also re-derives every ship's port calls, for when the
-      # rules that turn state periods into port calls change.
+      # "full_refresh" also re-derives every ship's port calls. That happens
+      # by itself, once, after the rules in port_calls.py change (see
+      # RULES_VERSION there), and the step then leaves a port-calls-rebuilt
+      # file so the Gold step below rebuilds the fact table too.
       - name: Build Silver, state periods and port calls
         env:
           REBUILD_PORT_CALLS: ${{ inputs.full_refresh }}
@@ -87,6 +89,9 @@ jobs:
       # The fact table is incremental: each run only re-matches ships with new
       # data. When the port list or the matching rules change, the older rows
       # need matching again, and "full_refresh" does that once.
+      #
+      # It is also rebuilt from scratch when every ship's port calls were just
+      # re-derived (the port-calls-rebuilt file), since those rows aren't newer.
       #
       # When the model gains or loses a column, an incremental run can't
       # update the existing table, so dbt stops with "schemas ... are out of
@@ -98,7 +103,7 @@ jobs:
           FULL_REFRESH: ${{ inputs.full_refresh }}
         run: |
           set -o pipefail
-          if [ "$FULL_REFRESH" = "true" ]; then
+          if [ "$FULL_REFRESH" = "true" ] || [ -f ../port-calls-rebuilt ]; then
             uv run dbt build --full-refresh
           elif uv run dbt build | tee dbt-build.log; then
             :

@@ -24,6 +24,10 @@ STOP_STATES = ("berthed", "anchored")
 # A visit backed by a handful of isolated pings is not evidence of a port
 # call -- it is evidence that we were not watching.
 MIN_VISIT_READINGS = 3
+# Raise this whenever a change here gives different port calls for the same
+# state periods. The next run then re-derives every ship, not only ships with
+# new data. 2: arrival/departure only count as seen without a sighting gap.
+RULES_VERSION = 2
 
 
 @dataclass
