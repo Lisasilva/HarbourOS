@@ -1,5 +1,6 @@
 """Orchestration: build each derived layer and report what happened."""
 
+import os
 from pathlib import Path
 
 import duckdb
@@ -214,8 +215,13 @@ def run_state_periods_transform(db_path: Path | str = DB_PATH) -> None:
         raise ValueError(f"State periods cover {covered} readings but Silver holds {silver_rows}")
 
 
-def run_port_calls_transform(db_path: Path | str = DB_PATH) -> None:
-    """Rebuild port calls for the ships whose state periods have changed."""
+def run_port_calls_transform(db_path: Path | str = DB_PATH, rebuild_all: bool = False) -> None:
+    """Rebuild port calls for the ships whose state periods have changed.
+
+    rebuild_all re-derives every ship's port calls, for when the rules that
+    turn state periods into port calls change: ships with no new data would
+    otherwise keep visits derived under the old rules.
+    """
     initialize_port_calls_table(db_path=db_path)
     initialize_progress_table(db_path=db_path)
 
@@ -227,10 +233,11 @@ def run_port_calls_transform(db_path: Path | str = DB_PATH) -> None:
         LEFT JOIN derived_progress AS pc
                ON pc.mmsi = sp.mmsi AND pc.layer = 'port_calls'
         WHERE sp.layer = 'state_periods'
-          AND (pc.built_from_received_at IS NULL
+          AND (? OR pc.built_from_received_at IS NULL
                OR sp.built_from_received_at > pc.built_from_received_at)
         ORDER BY sp.mmsi
-        """
+        """,
+        params=[rebuild_all],
     ).fetchall()
     watermarks = {row[0]: row[1] for row in stale}
 
@@ -285,4 +292,5 @@ if __name__ == "__main__":
     print()
     run_state_periods_transform()
     print()
-    run_port_calls_transform()
+    # Set by the Pipeline's "full_refresh" box, alongside dbt's full refresh.
+    run_port_calls_transform(rebuild_all=os.environ.get("REBUILD_PORT_CALLS") == "true")

@@ -25,7 +25,7 @@ on:
         description: "Minutes to collect before building (use a small number to test)"
         default: "50"
       full_refresh:
-        description: "Rebuild the Gold port calls from scratch (after changing the port list or matching rules)"
+        description: "Rebuild all port calls from scratch (after changing the port list or the port-call or matching rules)"
         type: boolean
         default: false
 
@@ -77,7 +77,11 @@ jobs:
           COLLECT_MINUTES: ${{ inputs.collect_minutes || '50' }}
         run: uv run python -m HarbourOS.collect --minutes "$COLLECT_MINUTES" --every 10
 
+      # "full_refresh" also re-derives every ship's port calls, for when the
+      # rules that turn state periods into port calls change.
       - name: Build Silver, state periods and port calls
+        env:
+          REBUILD_PORT_CALLS: ${{ inputs.full_refresh }}
         run: uv run python -m HarbourOS.transform
 
       # The fact table is incremental: each run only re-matches ships with new
