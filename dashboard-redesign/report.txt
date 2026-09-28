@@ -1,0 +1,26 @@
+console warning: using deprecated parameters for the initialization function; pass a single object instead
+console error: TypeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/:435:28
+    at body (http://localhost:8765/:558:3)
+    at define (http://localhost:8765/_observablehq/runtime.607a8173.js:7:17622)
+console error: RuntimeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/_observablehq/runtime.607a8173.js:7:7680
+    at async Promise.all (index 1)
+console error: RuntimeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/_observablehq/runtime.607a8173.js:7:7680
+    at async Promise.all (index 4)
+the map did not finish loading
+page text: HarbourOS Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds. Data last updated Mon, Sep 28, 08:19 PM (43 min ago) Cargo 1,180 Tanker 107 Passenger & ferries 486 Fishing 542 Tugs & service 433 Other 821 Ships on the map now 3,569 seen in the last 2 hours Under way 647 moving at 1 knot or more In port now 2,769 arrived and not yet seen leaving Port calls this week 13,115 at 492 ports moving stopped port Explore the coast Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours. BUSIEST PORTS RIGHT NOW Kristiansund 39 ships in port Tromso 37 ships in port Stavanger 37 ships in port Alesund 37 ships in port Maloy 34 ships in port Oslo 33 ships in port ▶ Play Live · Mon, Sep 28, 08:19 PM Live TypeError: Cannot read properties of undefined (reading 'Map') RuntimeError: Cannot read properties of undefined (reading 'Map') RuntimeError: Cannot read properties of undefined (reading 'Map') This week at a glance Port calls in the 7 days up to the latest data, for the ship types picked above. Busiest ports Port calls, split by ship type Cargo Tanker Passenger & ferries Fishing Tugs & service Other Stavanger Kristiansund Alesund Svolvar Osan Oslo Maloy Bergen Sandnessjoen Tromso Kristiansand Fredrikstad Hammerfest 0 50 100 150 Port calls → How long ships stay Finished port calls, by hours alongside (stays over 48 hours in the last bar) 0 500 1,000 1,500 2,
+console warning: using deprecated parameters for the initialization function; pass a single object instead
+console error: TypeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/:435:28
+    at body (http://localhost:8765/:558:3)
+    at define (http://localhost:8765/_observablehq/runtime.607a8173.js:7:17622)
+console error: RuntimeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/_observablehq/runtime.607a8173.js:7:7680
+    at async Promise.all (index 1)
+console error: RuntimeError: Cannot read properties of undefined (reading 'Map')
+    at http://localhost:8765/_observablehq/runtime.607a8173.js:7:7680
+    at async Promise.all (index 4)
+the map did not finish loading
+page text: HarbourOS Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds. Data last updated Mon, Sep 28, 08:19 PM (44 min ago) Cargo 1,180 Tanker 107 Passenger & ferries 486 Fishing 542 Tugs & service 433 Other 821 Ships on the map now 3,569 seen in the last 2 hours Under way 647 moving at 1 knot or more In port now 2,769 arrived and not yet seen leaving Port calls this week 13,115 at 492 ports Explore the coast Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours. BUSIEST PORTS RIGHT NOW Kristiansund 39 ships in port Tromso 37 ships in port Stavanger 37 ships in port Alesund 37 ships in port Maloy 34 ships in port Oslo 33 ships in port ▶ Play Live · Mon, Sep 28, 08:19 PM Live TypeError: Cannot read properties of undefined (reading 'Map') RuntimeError: Cannot read properties of undefined (reading 'Map') RuntimeError: Cannot read properties of undefined (reading 'Map') This week at a glance Port calls in the 7 days up to the latest data, for the ship types picked above. Busiest ports Port calls, split by ship type Cargo Tanker Passenger & ferries Fishing Tugs & service Other Stavanger Kristiansund Alesund Svolvar Osan Oslo Maloy Bergen Sandnessjoen Tromso Kristiansand Fredrikstad Hammerfest 0 100 Port calls → How long ships stay Finished port calls, by hours alongside (stays over 48 hours in the last bar) 0 500 1,000 1,500 2,000 2,500 3,000 3,500 4,000
