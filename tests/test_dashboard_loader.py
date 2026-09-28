@@ -2,10 +2,9 @@
 
 The loader (dashboard/src/data/port_calls.csv.py) has a dot in its filename
 -- Observable's convention for a loader that produces port_calls.csv -- so it
-can't be imported the normal way. importlib loads it directly from its path.
+can't be imported the normal way. The tests read its source instead.
 """
 
-import importlib.util
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -42,11 +41,8 @@ def _reading(mmsi: int, minute: int, speed: float, msgtime_offset=timedelta()) -
 def _load_query() -> str:
     """Pull the QUERY string and its recency threshold out of the loader
     module without running its top-level connect()/stdout side effects."""
-    spec = importlib.util.spec_from_file_location("port_calls_loader", LOADER_PATH)
-    module = importlib.util.module_from_spec(spec)
-    # __name__ != "__main__" style guard isn't used by the loader, so patch
-    # sys.stdout-writing connect() away by reading the source instead of
-    # executing it.
+    # The loader has no `if __name__ == "__main__"` guard, so importing it
+    # would connect and write to stdout. Read the source instead.
     source = LOADER_PATH.read_text()
     namespace: dict = {}
     # Strip the two lines that run at import time (the `with connect()...`
@@ -97,5 +93,9 @@ def test_a_visit_with_no_observed_departure_and_recent_data_is_in_port_now(
     result = conn.sql(query).df().set_index("mmsi")["in_port_now"]
     conn.close()
 
-    assert bool(result[257000001]) is True, "recently-seen, departure-unobserved visit should read in_port_now"
-    assert bool(result[257000002]) is False, "a visit last seen long ago should not read in_port_now"
+    assert (
+        bool(result[257000001]) is True
+    ), "recently-seen, departure-unobserved visit should read in_port_now"
+    assert (
+        bool(result[257000002]) is False
+    ), "a visit last seen long ago should not read in_port_now"
