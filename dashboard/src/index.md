@@ -5,7 +5,9 @@ title: Live ship traffic
 <link rel="stylesheet" href="npm:maplibre-gl@6/dist/maplibre-gl.css">
 
 ```js
-import maplibregl from "npm:maplibre-gl@6";
+import * as maplibreModule from "npm:maplibre-gl@6";
+// MapLibre 6 ships named exports; older builds had one default export.
+const maplibregl = maplibreModule.default ?? maplibreModule;
 ```
 
 ```js
@@ -225,22 +227,22 @@ const inPortShown = ships.filter((d) => d.in_port_now && activeGroups.has(d.grou
   <div class="card kpi">
     <div class="label">Ships on the map now</div>
     <div class="value">${d3.format(",")(liveShown.length)}</div>
-    <div class="note">seen in the last 2 hours</div>
+    <div class="kpi-note">seen in the last 2 hours</div>
   </div>
   <div class="card kpi">
     <div class="label">Under way</div>
     <div class="value">${d3.format(",")(liveShown.filter((d) => d.moving).length)}</div>
-    <div class="note">moving at 1 knot or more</div>
+    <div class="kpi-note">moving at 1 knot or more</div>
   </div>
   <div class="card kpi">
     <div class="label">In port now</div>
     <div class="value">${d3.format(",")(inPortShown.length)}</div>
-    <div class="note">arrived and not yet seen leaving</div>
+    <div class="kpi-note">arrived and not yet seen leaving</div>
   </div>
   <div class="card kpi">
     <div class="label">Port calls this week</div>
     <div class="value">${d3.format(",")(weekShown.length)}</div>
-    <div class="note">at ${d3.format(",")(new Set(weekShown.map((d) => d.port_locode)).size)} ports</div>
+    <div class="kpi-note">at ${d3.format(",")(new Set(weekShown.map((d) => d.port_locode)).size)} ports</div>
   </div>
 </div>
 
@@ -335,7 +337,7 @@ const mapCard = html`<div class="map-card">
 </div>`;
 ```
 
-${mapCard}
+<div class="map-wrap">${mapCard}</div>
 
 ```js
 const map = await (async () => {

@@ -136,7 +136,8 @@ a {
 /* ---- Filter chips (also the map legend) ---- */
 
 .chips form {
-  width: auto;
+  --input-width: 100%;
+  width: 100%;
   max-width: none;
 }
 
@@ -214,12 +215,17 @@ a {
   color: var(--cadet);
 }
 
-.kpi .note {
+.kpi .kpi-note {
   font-size: 0.78rem;
   color: var(--ink-2);
 }
 
 /* ---- Map ---- */
+
+.map-wrap {
+  max-width: none;
+  margin: 1rem 0 2rem;
+}
 
 .map-card {
   position: relative;
