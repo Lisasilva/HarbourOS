@@ -1,0 +1,452 @@
+/* HarbourOS theme. Built on Framework's default styles, with Maria's palette:
+   Space Cadet #25344F, Slate Gray #617891, Tan #D5B893, Coffee #6F4D38 and
+   Caput Mortuum #632024. The darker shades carry text and titles; tan warms
+   the page; the ship colours on the map are livelier steps of the same hues
+   (checked for colour-blind separation), since the originals are too muted
+   to tell apart as small marks. */
+
+@import url("observablehq:default.css");
+@import url("observablehq:theme-air.css");
+
+:root {
+  --cadet: #25344f;
+  --slate: #617891;
+  --tan: #d5b893;
+  --coffee: #6f4d38;
+  --mortuum: #632024;
+
+  --page: #f8f3ea;
+  --card: #fffdf9;
+  --line: #e8dcc6;
+  --ink: #25344f;
+  --ink-2: #4a5972;
+  --muted: #617891;
+
+  --theme-background: var(--page);
+  --theme-background-alt: var(--card);
+  --theme-foreground: var(--ink);
+  --theme-foreground-focus: var(--mortuum);
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sans-serif: var(--sans);
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+#observablehq-main {
+  max-width: 1320px;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  color: var(--cadet);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--mortuum);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(37 52 79 / 0.04), 0 6px 20px rgb(37 52 79 / 0.05);
+}
+
+.card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.15rem;
+}
+
+.card .sub {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0 0 0.6rem;
+}
+
+/* ---- Header ---- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin: 1rem 0 1.25rem;
+  padding: 2rem 2.25rem 3.25rem;
+  border-radius: 20px;
+  color: #f4ecdf;
+  background:
+    radial-gradient(circle at 85% -20%, rgb(213 184 147 / 0.35), transparent 55%),
+    linear-gradient(135deg, #25344f 0%, #2f4466 60%, #3b5478 100%);
+}
+
+.hero h1 {
+  color: #fbf6ee;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  margin: 0;
+  max-width: none;
+}
+
+.hero p {
+  margin: 0.35rem 0 0;
+  max-width: 44rem;
+  color: #e3d6c1;
+  font-size: 1.05rem;
+}
+
+.hero .fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(213 184 147 / 0.45);
+  font-size: 0.82rem;
+  color: #f4ecdf;
+}
+
+.hero .fresh .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7fc79a;
+  box-shadow: 0 0 0 3px rgb(127 199 154 / 0.25);
+}
+
+.hero .fresh.stale .dot {
+  background: #e0a15a;
+  box-shadow: 0 0 0 3px rgb(224 161 90 / 0.25);
+}
+
+.hero .waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 46px;
+}
+
+/* ---- Filter chips (also the map legend) ---- */
+
+.chips form {
+  width: auto;
+  max-width: none;
+}
+
+.chips form > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chips label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chips label:has(input:not(:checked)) {
+  opacity: 0.5;
+  background: transparent;
+}
+
+.chips input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chips label:has(input:focus-visible) {
+  outline: 2px solid var(--mortuum);
+  outline-offset: 2px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.chips small {
+  color: var(--muted);
+}
+
+/* ---- Headline numbers ---- */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.kpi {
+  padding: 1rem 1.2rem;
+}
+
+.kpi .label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.kpi .value {
+  font-family: var(--serif);
+  font-size: 2.1rem;
+  line-height: 1.15;
+  color: var(--cadet);
+}
+
+.kpi .note {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+/* ---- Map ---- */
+
+.map-card {
+  position: relative;
+  height: min(78vh, 720px);
+  min-height: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #c9d7e4;
+  box-shadow: 0 8px 30px rgb(37 52 79 / 0.1);
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.map-key {
+  position: absolute;
+  left: 12px;
+  bottom: 64px;
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+  background: rgb(255 253 249 / 0.9);
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  align-items: center;
+}
+
+.map-key svg {
+  vertical-align: -2px;
+}
+
+.map-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 64px;
+  width: 340px;
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgb(255 253 249 / 0.96);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 24px rgb(37 52 79 / 0.14);
+  font-size: 0.88rem;
+}
+
+.map-panel h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  max-width: none;
+}
+
+.map-panel .meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.map-panel .status {
+  margin: 0.6rem 0;
+  color: var(--ink);
+}
+
+.map-panel .close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  border: none;
+  background: none;
+  font-size: 1.2rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.map-panel .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.map-panel .stats div {
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: #f5ede0;
+}
+
+.map-panel .stats b {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--cadet);
+}
+
+.map-panel .stats span {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+.map-panel h4 {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--coffee);
+}
+
+.map-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.map-panel li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #efe5d4;
+}
+
+.map-panel li button {
+  all: unset;
+  cursor: pointer;
+  color: var(--cadet);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.map-panel li button:hover {
+  color: var(--mortuum);
+  text-decoration: underline;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.pill.high { background: #dfe8f2; color: var(--cadet); }
+.pill.medium { background: #f3e6cf; color: var(--coffee); }
+.pill.low { background: #f1dcd9; color: var(--mortuum); }
+
+.map-replay {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+}
+
+.replay {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 12px;
+  background: rgb(37 52 79 / 0.92);
+  color: #f4ecdf;
+  font-size: 0.82rem;
+  max-width: none;
+}
+
+.replay button {
+  border: 1px solid rgb(213 184 147 / 0.6);
+  background: transparent;
+  color: #f4ecdf;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.replay button.on {
+  background: var(--tan);
+  color: var(--cadet);
+  border-color: var(--tan);
+}
+
+.replay input[type="range"] {
+  flex: 1;
+  accent-color: var(--tan);
+}
+
+.replay output {
+  min-width: 11.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.maplibregl-popup-content {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+@media (max-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .map-card {
+    height: 70vh;
+  }
+
+  .map-panel {
+    top: auto;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 45%;
+  }
+
+  .replay output {
+    min-width: 0;
+  }
+
+  .map-key {
+    display: none;
+  }
+}

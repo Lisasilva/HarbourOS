@@ -1,0 +1,82 @@
+name: Dashboard preview
+
+# Build the dashboard from a branch and publish it to a Cloudflare preview
+# address (https://<branch>.harbouros.pages.dev), without collecting any data.
+# It is for trying out dashboard changes: a full Pipeline run on a branch would
+# wait behind the hourly runs on master, and could bump the next one out of the
+# queue and stop the chain.
+#
+# It does write to the warehouse, but only the Gold models the dashboard reads
+# that are cheap to rebuild from Silver (dim_vessel and fct_vessel_track), so a
+# branch that adds a column or a model can be previewed before it is merged.
+# The next Pipeline run on master rebuilds them as master defines them.
+#
+# It runs on every push to a branch named dashboard-*, and can be started by
+# hand (Actions → Dashboard preview → Run workflow) once this file is on master;
+# GitHub only offers that button for workflows on the default branch.
+on:
+  push:
+    branches: ["dashboard-*"]
+  workflow_dispatch:
+
+concurrency:
+  group: preview-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.ref_name != 'master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    env:
+      HARBOUROS_DB: md:harbouros
+      motherduck_token: ${{ secrets.MOTHERDUCK_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Rebuild the Gold models the dashboard reads
+        working-directory: dbt
+        run: uv run dbt build --select dim_vessel fct_vessel_track
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Build the dashboard
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to a preview address
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dashboard/dist --project-name harbouros --branch ${{ github.ref_name }} --commit-dirty=true
+
+      # The built site, for checking a preview without opening the address.
+      - name: Keep the built site
+        uses: actions/upload-artifact@v5
+        with:
+          name: dashboard-dist
+          path: dashboard/dist
+          retention-days: 3

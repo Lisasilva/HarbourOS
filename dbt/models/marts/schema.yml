@@ -13,10 +13,45 @@ models:
         tests: [not_null]
 
   - name: dim_vessel
-    description: One row per vessel observed, with its most recently reported name.
+    description: One row per vessel observed, with its most recently reported name and type.
     columns:
       - name: mmsi
         tests: [unique, not_null]
+      - name: ship_category
+        description: The AIS ship type grouped into cargo, tanker, passenger (includes ferries), and so on.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - fishing
+                  - towing / tug
+                  - pilot, rescue, service
+                  - passenger
+                  - cargo
+                  - tanker
+                  - leisure
+                  - unknown
+                  - other
+
+  - name: fct_vessel_track
+    description: >
+      Each ship's position once per 10-minute slot over the last 7 days, for
+      drawing routes. Grain: one ship in one slot.
+    columns:
+      - name: mmsi
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vessel')
+                field: mmsi
+      - name: slot_start
+        tests: [not_null]
+      - name: latitude
+        tests: [not_null]
+      - name: longitude
+        tests: [not_null]
 
   - name: dim_date
     description: Calendar covering exactly the days observed in the AIS data.
