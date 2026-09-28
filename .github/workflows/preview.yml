@@ -54,6 +54,23 @@ jobs:
         working-directory: dbt
         run: uv run dbt build --select dim_vessel fct_vessel_track
 
+      - name: TEMP look at stays of about 36 hours
+        run: |
+          uv run python - <<'PY'
+          from HarbourOS.storage import connect
+          c = connect("md:harbouros")
+          q = """
+            select round(minutes_alongside / 60) as h, completeness, count(*) n,
+                   min(berth_start) b0, max(berth_start) b1, min(berth_end) e0, max(berth_end) e1
+            from fact_port_call
+            where berth_start > (select max(message_time) from ais_messages_silver) - interval 7 days
+              and minutes_alongside between 30 * 60 and 42 * 60
+            group by all order by n desc limit 15
+          """
+          print(c.sql(q))
+          print(c.sql("select date_trunc('hour', message_time) h, count(*) from ais_messages_silver where message_time > now() - interval 4 days group by 1 order by 1"))
+          PY
+
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
