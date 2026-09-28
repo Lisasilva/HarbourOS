@@ -621,7 +621,7 @@ const replayTime = Generators.input(replayInput);
       <div class="stats">
         <div><b>${d3.format(",.0f")(sailedKm / 1.852)}</b><span>nautical miles sailed (3 days)</span></div>
         <div><b>${weekVisits.filter((d) => d.visit_type === "port_call").length}</b><span>port calls this week</span></div>
-        <div><b>${weekVisits.length ? stay(d3.median(weekVisits, (d) => d.minutes_alongside)) : "–"}</b><span>typical stay</span></div>
+        <div><b>${weekVisits.some((d) => d.completeness === "complete") ? stay(d3.median(weekVisits.filter((d) => d.completeness === "complete"), (d) => d.minutes_alongside)) : "–"}</b><span>typical stay</span></div>
       </div>
       ${weekVisits.length ? html`<h4>Stops this week</h4>${stopStrip(weekVisits)}` : ""}
       <h4>Latest stops</h4>
@@ -636,7 +636,7 @@ const replayTime = Generators.input(replayInput);
     const port = portByLocode.get(selection.locode);
     const portCalls = weekCalls.filter((d) => d.port_locode === selection.locode);
     const here = ships.filter((d) => d.in_port_now && d.last_port === port?.name && +latest - d.last_seen <= LIVE_WINDOW_MS);
-    const finished = portCalls.filter((d) => !d.in_port_now);
+    const finished = portCalls.filter((d) => d.completeness === "complete");
     panel.replaceChildren(html`${close()}
       <div class="meta">Port · ${selection.locode}</div>
       <h3>${port?.name ?? selection.locode}</h3>
@@ -771,11 +771,14 @@ function mixBar(rows) {
   </div>
   <div class="card">
     <h2>How long ships stay</h2>
-    <p class="sub">Finished port calls, by hours alongside (stays over 48 hours in the last bar)</p>
+    <p class="sub">Visits where both the arrival and the departure were seen, by hours alongside (stays over 48 hours in the last bar)</p>
 
 ```js
 {
-  const finished = weekShown.filter((d) => !d.in_port_now).map((d) => ({...d, hours: Math.min(d.minutes_alongside / 60, 47.9)}));
+  // Only visits seen from arrival to departure: when a ship drops out of
+  // sight, its stay ends where the sightings stopped, not when it left, and
+  // a single collection gap turned hundreds of those into one false peak.
+  const finished = weekShown.filter((d) => d.completeness === "complete").map((d) => ({...d, hours: Math.min(d.minutes_alongside / 60, 47.9)}));
   display(resize((width) =>
     Plot.plot({
       height: 360,
