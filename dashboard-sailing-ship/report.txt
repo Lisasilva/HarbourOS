@@ -1,83 +1,12 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x6c40013a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x6c40013a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x6c40013a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x6c40013a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
-console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,801 | 917 | 2,712 | 14,424
 ships drawn: 6033
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/17/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/17/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/16/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/16/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/18/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/18/7.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/67/31.pbf net::ERR_ABORTED
 clicked moving ship: KB ROKK
-ship panel: × Cargo · MMSI 258025160 KB ROKK Under way at 9.0 knots, heading SE. Last seen Tue, Sep 29, 08:47 AM (25 min ago) 40 nautical miles sailed (3 days) 3 port calls this week 13.0 h typical stay STOPS THIS WEEK At sea Lovund Luroy Thu Sat Mon LATEST STOPS At sea Mon, Sep 28, 03:18 PM · 17.0 h medium Lov
+ship panel: × Cargo · MMSI 258025160 KB ROKK Under way at 9.0 knots, heading SE. Last seen Tue, Sep 29, 08:47 AM (28 min ago) 40 nautical miles sailed (3 days) 3 port calls this week 13.0 h typical stay STOPS THIS WEEK At sea Lovund Luroy Thu Sat Mon LATEST STOPS At sea Mon, Sep 28, 03:18 PM · 17.0 h medium Lov
 clicked port: Tonnes
 console warning: using deprecated parameters for the initialization function; pass a single object instead
