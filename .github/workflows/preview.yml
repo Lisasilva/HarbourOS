@@ -6,10 +6,12 @@ name: Dashboard preview
 # wait behind the hourly runs on master, and could bump the next one out of the
 # queue and stop the chain.
 #
-# It does write to the warehouse, but only the Gold models the dashboard reads
-# that are cheap to rebuild from Silver (dim_vessel and fct_vessel_track), so a
-# branch that adds a column or a model can be previewed before it is merged.
-# The next Pipeline run on master rebuilds them as master defines them.
+# It reads master's Gold tables as they are. Only when the branch changes the
+# dbt project does it rebuild the two cheap models the dashboard reads
+# (dim_vessel and fct_vessel_track), so a new column or model can be previewed
+# before it is merged; the next Pipeline run on master rebuilds them as master
+# defines them. Skipping that otherwise keeps previews from writing to the
+# warehouse while the live pipeline might be.
 #
 # It runs on every push to a branch named dashboard-*, and can be started by
 # hand (Actions → Dashboard preview → Run workflow) once this file is on master;
@@ -38,6 +40,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history, to compare the branch with master below.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -50,9 +55,14 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Rebuild the Gold models the dashboard reads
+      - name: Rebuild the Gold models the dashboard reads, if the branch changes them
         working-directory: dbt
-        run: uv run dbt build --select dim_vessel fct_vessel_track
+        run: |
+          if git diff --quiet origin/master...HEAD -- .; then
+            echo "The branch doesn't change dbt; using master's Gold tables."
+          else
+            uv run dbt build --select dim_vessel fct_vessel_track
+          fi
 
       - name: TEMP warehouse size and query time
         continue-on-error: true
@@ -61,10 +71,8 @@ jobs:
           from HarbourOS.storage import connect
           con = connect()
           for sql in [
-              "pragma database_size",
-              "select * from md_information_schema.storage_info",
-              "select table_name, estimated_size, column_count from duckdb_tables() order by estimated_size desc limit 15",
-              "describe md_information_schema.query_history",
+              "select date_trunc('day', start_time) as day, count(*) as queries, sum(execution_time) as execution, sum(total_elapsed_time) as elapsed, max(instance_type) as instance from md_information_schema.query_history where start_time > now() - interval 4 days group by all order by day",
+              "select date_trunc('hour', start_time) as hour, count(*) as queries, sum(execution_time) as execution from md_information_schema.query_history where start_time > now() - interval 6 hours group by all order by hour",
           ]:
               try:
                   print(sql); print(con.sql(sql))
@@ -117,4 +125,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit --quiet -m "Screenshots of $SOURCE_BRANCH at ${GITHUB_SHA::7}"
-          git push --quiet origin "$SHOTS_BRANCH"
+          # Two branches' previews can finish together; each writes its own
+          # folder, so catching up with the other's commit is always safe.
+          for attempt in 1 2 3; do
+            git push --quiet origin "$SHOTS_BRANCH" && break
+            git pull --quiet --rebase origin "$SHOTS_BRANCH"
+          done
