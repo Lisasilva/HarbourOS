@@ -751,7 +751,7 @@ const replayTime = Generators.input(replayInput);
       ${Plot.plot({
         height: 120,
         width: 300,
-        marginLeft: 28,
+        marginLeft: 34,
         style: {fontSize: "10px", color: "#4a5972"},
         x: {label: null, tickFormat: (h) => `${h}:00`, ticks: [0, 6, 12, 18]},
         y: {label: null, grid: true, ticks: 3},
