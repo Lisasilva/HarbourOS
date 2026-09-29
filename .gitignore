@@ -16,3 +16,6 @@ dbt/.user.yml
 !dashboard/src/data/
 dashboard/src/data/*
 !dashboard/src/data/*.py
+
+# Left by HarbourOS.transform when it re-derived every ship (see pipeline.yml).
+port-calls-rebuilt

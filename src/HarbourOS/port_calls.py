@@ -24,6 +24,10 @@ STOP_STATES = ("berthed", "anchored")
 # A visit backed by a handful of isolated pings is not evidence of a port
 # call -- it is evidence that we were not watching.
 MIN_VISIT_READINGS = 3
+# Raise this whenever a change here gives different port calls for the same
+# state periods. The next run then re-derives every ship, not only ships with
+# new data. 2: arrival/departure only count as seen without a sighting gap.
+RULES_VERSION = 2
 
 
 @dataclass
@@ -101,6 +105,13 @@ def derive_port_calls(periods: list[StatePeriod]) -> list[PortCall]:
 
         before = periods[first_stop - 1] if first_stop > 0 else None
         after = periods[last_stop + 1] if last_stop + 1 < len(periods) else None
+        # A neighbouring period only witnesses the arrival or departure if it
+        # joins on without a gap. Across a gap the ship could have come and
+        # gone unseen: sightings stopping at 06:04 is not the ship leaving.
+        if before is not None and span[0].start_time - before.end_time > MAX_GAP:
+            before = None
+        if after is not None and after.start_time - span[-1].end_time > MAX_GAP:
+            after = None
 
         if before is not None and before.state == "approach":
             arrival = before.start_time

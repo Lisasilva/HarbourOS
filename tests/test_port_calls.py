@@ -111,3 +111,31 @@ def test_losing_sight_of_a_ship_ends_the_visit():
     """A two-day observation gap is not proof the ship sat at the berth."""
     periods = [period("berthed", 0, 60), period("berthed", 2940, 3000)]
     assert len(derive_port_calls(periods)) == 2
+
+
+def test_a_gap_in_sightings_leaves_the_departure_unobserved():
+    # Seen berthed, then nothing for hours, then seen at sea: the ship may
+    # have left at any point in the gap, so the departure wasn't observed.
+    periods = [
+        period("approach", 0, 10),
+        period("berthed", 10, 130),
+        period("at_sea", 400, 460),
+    ]
+    calls = derive_port_calls(periods)
+
+    assert len(calls) == 1
+    assert calls[0].completeness == "departure_unobserved"
+    assert calls[0].departure_time == START + timedelta(minutes=130)
+
+
+def test_a_gap_before_a_stop_leaves_the_arrival_unobserved():
+    periods = [
+        period("at_sea", 0, 60),
+        period("berthed", 300, 420),
+        period("departed", 420, 430),
+    ]
+    calls = derive_port_calls(periods)
+
+    assert len(calls) == 1
+    assert calls[0].completeness == "arrival_unobserved"
+    assert calls[0].arrival_time == START + timedelta(minutes=300)

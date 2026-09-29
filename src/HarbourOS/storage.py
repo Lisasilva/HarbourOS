@@ -350,6 +350,29 @@ def record_progress(
     conn.close()
 
 
+def rules_version(layer: str, db_path: Path | str = DB_PATH) -> int | None:
+    """The version of the rules a derived layer was last built with, if recorded.
+
+    When the code that derives a layer changes its rules, rows for ships with
+    no new data would keep the old answer. Comparing this with the version in
+    the code tells the transform to rebuild every ship once.
+    """
+    conn = connect(db_path)
+    conn.execute("CREATE TABLE IF NOT EXISTS derived_rules (layer VARCHAR, version INTEGER)")
+    row = conn.execute("SELECT max(version) FROM derived_rules WHERE layer = ?", [layer]).fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def record_rules_version(layer: str, version: int, db_path: Path | str = DB_PATH) -> None:
+    """Record that a derived layer is now built with this version of its rules."""
+    conn = connect(db_path)
+    conn.execute("CREATE TABLE IF NOT EXISTS derived_rules (layer VARCHAR, version INTEGER)")
+    conn.execute("DELETE FROM derived_rules WHERE layer = ?", [layer])
+    conn.execute("INSERT INTO derived_rules VALUES (?, ?)", [layer, version])
+    conn.close()
+
+
 # ---------------------------------------------------------------------------
 # State periods
 # ---------------------------------------------------------------------------
