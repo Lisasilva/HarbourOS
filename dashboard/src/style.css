@@ -361,6 +361,87 @@ a {
   vertical-align: -2px;
 }
 
+/* The search box, top left beside the zoom buttons, with its matches below. */
+.map-search {
+  position: absolute;
+  top: 10px;
+  left: 52px;
+  z-index: 3;
+  width: min(300px, calc(100% - 64px));
+}
+
+.map-search input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgb(255 253 249 / 0.97);
+  box-shadow: 0 4px 14px rgb(37 52 79 / 0.12);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.map-search input:focus {
+  outline: 2px solid var(--slate);
+  outline-offset: 1px;
+}
+
+.map-search .results {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 8px 24px rgb(37 52 79 / 0.16);
+  font-size: 0.88rem;
+}
+
+.map-search .results li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.map-search .results li.active,
+.map-search .results li:hover {
+  background: #f3eadb;
+}
+
+.map-search .results .meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.map-search .swatch,
+.map-search .port-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+}
+
+.map-search .port-dot {
+  box-sizing: border-box;
+  background: rgb(99 32 36 / 0.15);
+  border: 1.5px solid #632024;
+}
+
+.reset-view svg {
+  display: block;
+  margin: auto;
+}
+
 .map-panel {
   position: absolute;
   top: 12px;

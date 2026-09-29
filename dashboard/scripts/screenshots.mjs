@@ -101,6 +101,22 @@ await range.evaluate((el) => {
 });
 await page.waitForTimeout(2000);
 await map.screenshot({path: `${out}/6-replay.png`});
+
+// The search box: type, look at the matches, pick the first, then reset the view.
+const search = page.locator(".map-search input");
+if (await search.count()) {
+  await search.fill("berg");
+  await page.waitForTimeout(400);
+  report.push(`search "berg": ${(await page.locator(".map-search .results li").allInnerTexts()).map((t) => t.replace(/\s+/g, " ")).join(" | ")}`);
+  await map.screenshot({path: `${out}/8-search.png`});
+  await search.press("Enter");
+  await page.waitForTimeout(2500);
+  report.push(`picked from search: ${await page.locator(".map-panel h3").innerText()}`);
+  await map.screenshot({path: `${out}/9-search-picked.png`});
+  await page.locator(".reset-view").click();
+  await page.waitForTimeout(2000);
+  report.push(`after reset: zoom ${await page.evaluate(() => window.__harbourMap.getZoom().toFixed(1))}`);
+}
 }
 await page.close();
 
