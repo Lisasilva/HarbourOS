@@ -184,6 +184,9 @@ const select = (value) => {
 ```
 
 ```js
+// A new run publishes about every 5.5 hours, so data older than 7 hours means
+// a run is late or failing.
+const STALE_MS = 7 * 36e5;
 const minuteClock = Generators.observe((notify) => {
   notify(Date.now());
   const id = setInterval(() => notify(Date.now()), 60_000);
@@ -195,7 +198,7 @@ const minuteClock = Generators.observe((notify) => {
   <h1>HarbourOS</h1>
   <p>Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds.</p>
   ${freshness.latest_reading
-    ? html`<span class="fresh ${minuteClock - latest > 3 * 36e5 ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} (${ago(minuteClock - latest)})${minuteClock - latest > 3 * 36e5 ? " · updates may be paused" : ""}</span>`
+    ? html`<span class="fresh ${minuteClock - latest > STALE_MS ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} (${ago(minuteClock - latest)})${minuteClock - latest > STALE_MS ? " · updates may be paused" : ""}</span>`
     : html`<span class="fresh stale"><span class="dot"></span>No data yet</span>`}
   ${sea}
 </section>
@@ -928,5 +931,5 @@ Every 10 minutes, Python collects the positions all ships along the coast are br
 (BarentsWatch AIS). SQL cleans them into a trusted layer, setting aside every rejected row with
 a reason. A Python state machine turns each ship's positions into stops, each with a confidence
 score, and dbt matches every stop to the nearest official port and builds the tables this page
-reads, including each ship's route. GitHub Actions runs the whole chain about once an hour and
+reads, including each ship's route. GitHub Actions runs the whole chain about four times a day and
 republishes this page. It is a static snapshot, so no database is exposed to the internet.
