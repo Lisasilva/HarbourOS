@@ -215,12 +215,12 @@ const sea = (() => {
     return `M${points.join(" L")} V90 H0 Z`;
   };
   const row = (name, d, fill) => {
-    const wave = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    wave.setAttribute("class", `wave ${name}`);
-    wave.setAttribute("viewBox", "0 0 2400 90");
-    wave.setAttribute("preserveAspectRatio", "none");
-    wave.innerHTML = `<path d="${d}" style="fill: ${fill}"/>`;
-    return wave;
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    el.setAttribute("class", `wave ${name}`);
+    el.setAttribute("viewBox", "0 0 2400 90");
+    el.setAttribute("preserveAspectRatio", "none");
+    el.innerHTML = `<path d="${d}" style="fill: ${fill}"/>`;
+    return el;
   };
   return html`<div class="sea" aria-hidden="true">
     <svg class="gulls" viewBox="0 0 60 24">

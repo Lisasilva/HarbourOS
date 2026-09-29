@@ -137,7 +137,8 @@ a {
   left: 0;
   right: 0;
   bottom: -1px;
-  height: 90px;
+  /* Taller than the waves, so the ship's mast and flag aren't cut off. */
+  height: 170px;
   overflow: hidden;
   pointer-events: none;
 }
