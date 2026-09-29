@@ -4,7 +4,7 @@ HarbourOS turns raw ship positions from Norway's BarentsWatch AIS feed into
 port calls: one row per ship stopping once, with the port it stopped at, how
 long it stayed, and a confidence score.
 
-**Live dashboard:** https://harbouros.pages.dev/ (updated about every hour)
+**Live dashboard:** https://harbouros.pages.dev/ (updated about 4 times a day)
 
 ## How it works
 
