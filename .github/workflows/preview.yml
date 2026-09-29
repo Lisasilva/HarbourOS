@@ -54,6 +54,24 @@ jobs:
         working-directory: dbt
         run: uv run dbt build --select dim_vessel fct_vessel_track
 
+      - name: TEMP warehouse size and query time
+        continue-on-error: true
+        run: |
+          uv run python - <<'PY'
+          from HarbourOS.storage import connect
+          con = connect()
+          for sql in [
+              "pragma database_size",
+              "select * from md_information_schema.storage_info",
+              "select table_name, estimated_size, column_count from duckdb_tables() order by estimated_size desc limit 15",
+              "describe md_information_schema.query_history",
+          ]:
+              try:
+                  print(sql); print(con.sql(sql))
+              except Exception as e:
+                  print("failed:", e)
+          PY
+
       - name: Set up Node
         uses: actions/setup-node@v7
         with:

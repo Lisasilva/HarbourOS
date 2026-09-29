@@ -252,11 +252,11 @@ const WATER = "#c9d7e4";
 const LAND = "#f5eee2";
 
 // The base map is OpenFreeMap's free vector tiles (no account or key),
-// recoloured into the palette. If they can't be reached, the ships are still
-// drawn on plain water.
+// recoloured into the palette. If they can't be reached within a few seconds,
+// the ships are still drawn on plain water.
 async function baseStyle() {
   try {
-    const response = await fetch("https://tiles.openfreemap.org/styles/positron");
+    const response = await fetch("https://tiles.openfreemap.org/styles/positron", {signal: AbortSignal.timeout(8000)});
     if (!response.ok) throw new Error(response.statusText);
     const style = await response.json();
     for (const layer of style.layers) {
@@ -341,16 +341,26 @@ const mapCard = html`<div class="map-card">
 <div class="map-wrap">${mapCard}</div>
 
 ```js
+// If the browser can't draw the map at all (no WebGL, say), `map` is null:
+// the map area says so, and the rest of the page works without it.
 const map = await (async () => {
-  const m = new maplibregl.Map({
-    container: mapCard.querySelector(".map-canvas"),
-    style: await baseStyle(),
-    center: [13, 64.2],
-    zoom: 4.1,
-    minZoom: 3,
-    maxZoom: 14,
-    attributionControl: false
-  });
+  const canvas = mapCard.querySelector(".map-canvas");
+  let m;
+  try {
+    m = new maplibregl.Map({
+      container: canvas,
+      style: await baseStyle(),
+      center: [13, 64.2],
+      zoom: 4.1,
+      minZoom: 3,
+      maxZoom: 14,
+      attributionControl: false
+    });
+  } catch (error) {
+    console.error(error);
+    canvas.replaceChildren(html`<p class="map-unavailable">The map can't be shown in this browser. The charts below still work.</p>`);
+    return null;
+  }
   m.addControl(new maplibregl.AttributionControl({compact: true}), "bottom-left");
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
   invalidation.then(() => m.remove());
@@ -533,7 +543,7 @@ const replayTime = Generators.input(replayInput);
 
 ```js
 // Ships on the map: live positions, or the replay's moment in the last 24 hours.
-{
+if (map) {
   const shown = (replayTime == null ? liveShips : positionsAt(replayTime)).filter((d) => activeGroups.has(d.group));
   map.getSource("ships").setData({
     type: "FeatureCollection",
@@ -557,7 +567,7 @@ const replayTime = Generators.input(replayInput);
 ```js
 // The selected ship's route (last 3 days) with direction chevrons, and the
 // ports it stopped at along the way.
-{
+if (map) {
   const mmsi = selection?.kind === "ship" ? selection.mmsi : null;
   map.setFilter("ship-selected", ["==", ["get", "mmsi"], mmsi ?? -1]);
   const points = mmsi == null ? [] : routeOf(mmsi);

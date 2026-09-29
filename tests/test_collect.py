@@ -4,7 +4,9 @@ from datetime import datetime
 from pathlib import Path
 
 import duckdb
+import pytest
 
+import HarbourOS.collect as collect_module
 from HarbourOS.collect import collect
 from HarbourOS.storage import initialize_bronze_table, insert_ais_snapshots
 
@@ -101,3 +103,13 @@ def test_snapshots_land_in_bronze_with_one_received_at_per_poll(tmp_path: Path):
 
 def test_nothing_collected_writes_nothing(tmp_path: Path):
     assert insert_ais_snapshots([], db_path=tmp_path / "unused.duckdb") == 0
+
+
+def test_a_run_that_collects_nothing_fails(monkeypatch):
+    # Every poll coming back empty means the API or our credentials are down.
+    # The run must fail (which alerts Maria) rather than republish old data.
+    monkeypatch.setattr(collect_module, "fetch_ais_data", lambda: [])
+    monkeypatch.setattr("sys.argv", ["collect", "--minutes", "0", "--every", "10"])
+
+    with pytest.raises(SystemExit, match="No poll returned"):
+        collect_module.main()

@@ -71,7 +71,13 @@ def main() -> None:
     parser.add_argument("--every", type=float, default=10, help="minutes between polls")
     args = parser.parse_args()
 
-    snapshots = collect(args.minutes, args.every)
+    snapshots = collect(args.minutes, args.every, fetch=fetch_ais_data)
+    if not snapshots:
+        # The live API always reports thousands of ships, so an empty run means
+        # BarentsWatch or our credentials are down. Failing the run here opens
+        # the "Pipeline is failing" issue; carrying on would republish the old
+        # data and look like a success.
+        raise SystemExit("No poll returned any ship positions; see the poll messages above")
     stored = insert_ais_snapshots(snapshots)
     print(f"✅ Stored {stored} messages from {len(snapshots)} polls in the Bronze layer")
 

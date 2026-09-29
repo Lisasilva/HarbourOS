@@ -133,6 +133,17 @@ a {
   height: 46px;
 }
 
+.map-unavailable {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  color: var(--ink-2);
+  background: #c9d7e4;
+}
+
 /* ---- Filter chips (also the map legend) ---- */
 
 .chips {
