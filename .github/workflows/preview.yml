@@ -71,8 +71,8 @@ jobs:
           from HarbourOS.storage import connect
           con = connect()
           for sql in [
-              "select date_trunc('day', start_time) as day, count(*) as queries, sum(execution_time) as execution, sum(total_elapsed_time) as elapsed, max(instance_type) as instance from md_information_schema.query_history where start_time > now() - interval 4 days group by all order by day",
-              "select date_trunc('hour', start_time) as hour, count(*) as queries, sum(execution_time) as execution from md_information_schema.query_history where start_time > now() - interval 6 hours group by all order by hour",
+              "select date_trunc('day', start_time) as day, count(*) as queries, round(sum(epoch(execution_time)) / 60, 1) as execution_min, round(sum(epoch(total_elapsed_time)) / 60, 1) as elapsed_min, max(instance_type) as instance from md_information_schema.query_history where start_time > now() - interval 4 days group by all order by day",
+              "select date_trunc('hour', start_time) as hour, count(*) as queries, round(sum(epoch(execution_time)) / 60, 1) as execution_min from md_information_schema.query_history where start_time > now() - interval 6 hours group by all order by hour",
           ]:
               try:
                   print(sql); print(con.sql(sql))
