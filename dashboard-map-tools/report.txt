@@ -1,8 +1,8 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x108c00cac400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x108c00cac400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x108c00cac400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x108c00cac400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console warning: [.WebGL-0xfc401bb1a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0xfc401bb1a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0xfc401bb1a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0xfc401bb1a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,599 | 653 | 2,819 | 16,358
 ships drawn: 5738
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/17/8.pbf net::ERR_ABORTED
@@ -11,12 +11,20 @@ request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/16/8.p
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/16/7.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/18/8.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/18/7.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/8.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/7.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/16.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/15.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/16.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/15.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/35/16.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/35/15.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/67/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/68/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/69/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/68/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/69/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/67/32.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/137/63.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/137/64.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/136/63.pbf net::ERR_ABORTED
@@ -27,14 +35,27 @@ request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/273/12
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/276/127.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/273/128.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/276/128.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/274/128.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/275/128.pbf net::ERR_ABORTED
 clicked moving ship: TYSFJORD
-ship panel: × Passenger & ferries · MMSI 257363500 TYSFJORD Under way at 12.7 knots, heading N. Last seen Tue 29 Sept, 21:57 (20 min ago) 278 nautical miles sailed (3 days) 0 port calls this week 73 min typical stay STOPS THIS WEEK At sea Thu Sat Mon LATEST STOPS At sea Tue 29 Sept, 15:29 · 21 min low At sea Tu
+ship panel: × Passenger & ferries · MMSI 257363500 TYSFJORD Under way at 12.7 knots, heading N. Last seen Tue 29 Sept, 21:57 (26 min ago) 278 nautical miles sailed (3 days) 0 port calls this week 73 min typical stay STOPS THIS WEEK At sea Thu Sat Mon LATEST STOPS At sea Tue 29 Sept, 15:29 · 21 min low At sea Tu
 clicked port: Tonnes
 search "berg": Bergen Port | Bergsfjord Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEN TS Tanker | BERGEBUEN Fishing | BERG Passenger & ferries
 picked from search: Bergen
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/18.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/32/18.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/17.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/32/17.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/19.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/32/19.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/18.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/31/18.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/17.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/31/17.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/19.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/31/19.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/16/9.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/17/9.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/9.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/8.pbf net::ERR_ABORTED
 after reset: zoom 4.1
 console warning: using deprecated parameters for the initialization function; pass a single object instead
