@@ -17,7 +17,17 @@ export default {
   // ],
 
   // Content to add to the head of the page, e.g. for a favicon:
-  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">',
+  head: `<link rel="icon" href="observable.png" type="image/png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">`,
+
+  // Maria's palette and fonts (src/style.css), one page with no sidebar.
+  style: "style.css",
+  sidebar: false,
+  pager: false,
+  toc: false,
+  footer: "HarbourOS · AIS data from BarentsWatch (Norwegian Coastal Administration) · Map © OpenFreeMap, OpenMapTiles, OpenStreetMap contributors",
 
   // The path to the source root.
   root: "src",

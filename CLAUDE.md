@@ -100,6 +100,12 @@ cd dashboard && npm run deploy
   branch (Actions → Pipeline → Run workflow → pick the branch). A branch other
   than `master` publishes only to a Cloudflare *preview* address, so the live
   site stays untouched.
+- To test dashboard changes, push to a branch named `dashboard-*`. The
+  "Dashboard preview" workflow rebuilds only `dim_vessel` and `fct_vessel_track`,
+  builds the site and publishes it to `https://<branch>.harbouros.pages.dev`,
+  without collecting data or queueing behind the hourly runs. It also pushes
+  screenshots and a page-error report to the `preview-screenshots` branch
+  (folder per branch), which is how Claude checks a preview it can't open.
 
 ## Known Facts and Gotchas
 - **Production is `pipeline.yml`, not Dagster.** `src/HarbourOS/orchestration.py`

@@ -80,10 +80,14 @@ def test_a_visit_with_no_observed_departure_and_recent_data_is_in_port_now(
         "FROM port_call_events"
     )
     conn.execute(
-        "CREATE TABLE dim_vessel AS SELECT DISTINCT mmsi, name AS vessel_name "
+        "CREATE TABLE dim_vessel AS "
+        "SELECT DISTINCT mmsi, name AS vessel_name, 'cargo' AS ship_category "
         "FROM ais_messages_silver"
     )
-    conn.execute("CREATE TABLE dim_port (port_locode VARCHAR, port_name VARCHAR)")
+    conn.execute(
+        "CREATE TABLE dim_port "
+        "(port_locode VARCHAR, port_name VARCHAR, latitude DOUBLE, longitude DOUBLE)"
+    )
     conn.close()
 
     query, recency_hours = _load_query()
