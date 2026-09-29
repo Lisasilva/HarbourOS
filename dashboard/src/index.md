@@ -214,8 +214,14 @@ const sea = (() => {
     });
     return `M${points.join(" L")} V90 H0 Z`;
   };
-  const row = (name, d, fill) =>
-    svg`<svg class="wave ${name}" viewBox="0 0 2400 90" preserveAspectRatio="none"><path d=${d} fill=${fill}/></svg>`;
+  const row = (name, d, fill) => {
+    const wave = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    wave.setAttribute("class", `wave ${name}`);
+    wave.setAttribute("viewBox", "0 0 2400 90");
+    wave.setAttribute("preserveAspectRatio", "none");
+    wave.innerHTML = `<path d="${d}" style="fill: ${fill}"/>`;
+    return wave;
+  };
   return html`<div class="sea" aria-hidden="true">
     <svg class="gulls" viewBox="0 0 60 24">
       <path d="M2 10 Q7 4 12 10 Q17 4 22 10"/>
