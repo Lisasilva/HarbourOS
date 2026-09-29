@@ -76,7 +76,7 @@ a {
   position: relative;
   overflow: hidden;
   margin: 1rem 0 1.25rem;
-  padding: 2rem 2.25rem 3.25rem;
+  padding: 2rem 2.25rem 6.25rem;
   border-radius: 20px;
   color: #f4ecdf;
   background:
@@ -124,13 +124,108 @@ a {
   box-shadow: 0 0 0 3px rgb(224 161 90 / 0.25);
 }
 
-.hero .waves {
+/* The sea along the bottom of the header (built in index.md). The text sits
+   above it, so a narrow screen never hides words behind the ship. */
+.hero > :not(.sea) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The sea along the bottom of the header (built in index.md). */
+.hero .sea {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -2px;
+  bottom: -1px;
+  /* Taller than the waves, so the ship's mast and flag aren't cut off. */
+  height: 170px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero .wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  height: 90px;
+  animation: roll linear infinite;
+}
+
+.hero .wave.back { animation-duration: 38s; opacity: 0.55; }
+.hero .wave.mid { animation-duration: 26s; opacity: 0.7; }
+.hero .wave.front { animation-duration: 17s; }
+
+@keyframes roll {
+  to { transform: translateX(-50%); }
+}
+
+.hero .ship-drift {
+  position: absolute;
+  right: 9%;
+  bottom: 22px;
+  width: 136px;
+  animation: drift 24s ease-in-out infinite alternate;
+}
+
+.hero .ship-rock {
+  transform-origin: 50% 85%;
+  animation: rock 4.8s ease-in-out infinite alternate;
+}
+
+.hero .ship {
+  display: block;
   width: 100%;
-  height: 46px;
+  height: auto;
+  filter: drop-shadow(0 3px 4px rgb(20 28 44 / 0.25));
+}
+
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-70px); }
+}
+
+@keyframes rock {
+  from { transform: rotate(-3deg) translateY(0); }
+  to { transform: rotate(2.5deg) translateY(-4px); }
+}
+
+.hero .gulls {
+  position: absolute;
+  right: 22%;
+  bottom: 62px;
+  width: 44px;
+  fill: none;
+  stroke: #e3d6c1;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.7;
+  animation: glide 9s ease-in-out infinite alternate;
+}
+
+@keyframes glide {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-18px, -6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .wave,
+  .hero .ship-drift,
+  .hero .ship-rock,
+  .hero .gulls {
+    animation: none;
+  }
+}
+
+.map-unavailable {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  color: var(--ink-2);
+  background: #c9d7e4;
 }
 
 /* ---- Filter chips (also the map legend) ---- */
@@ -553,6 +648,15 @@ a {
   }
 
   .map-key {
+    display: none;
+  }
+
+  .hero .ship-drift {
+    right: 5%;
+    width: 86px;
+  }
+
+  .hero .gulls {
     display: none;
   }
 }

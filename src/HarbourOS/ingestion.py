@@ -7,6 +7,11 @@ from HarbourOS.storage import insert_ais_messages
 
 load_dotenv()
 
+# Seconds to wait for BarentsWatch before giving up on a request. Without a
+# limit, one stalled connection would hang a pipeline run until GitHub kills
+# it hours later, and a killed run doesn't start the next one.
+REQUEST_TIMEOUT = 60
+
 
 def get_access_token():
     """Get a fresh access token from BarentsWatch"""
@@ -22,6 +27,7 @@ def get_access_token():
             "grant_type": "client_credentials",
             "scope": "ais",
         },
+        timeout=REQUEST_TIMEOUT,
     )
     if response.status_code != 200:
         raise Exception(f"Failed to get token: {response.text}")
@@ -42,7 +48,7 @@ def fetch_ais_data(limit=None):
     api_url = "https://live.ais.barentswatch.no/v1/latest/combined"
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    response = requests.get(api_url, headers=headers)
+    response = requests.get(api_url, headers=headers, timeout=REQUEST_TIMEOUT)
     print(f"API Status: {response.status_code}")
 
     if response.status_code != 200:
@@ -68,7 +74,7 @@ def fetch_historic_track(mmsi):
     api_url = f"https://historic.ais.barentswatch.no/v1/historic/trackslast24hours/{mmsi}"
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    response = requests.get(api_url, headers=headers)
+    response = requests.get(api_url, headers=headers, timeout=REQUEST_TIMEOUT)
     if response.status_code != 200:
         print(f"Error fetching historic track for {mmsi}: {response.status_code}")
         print(response.text)

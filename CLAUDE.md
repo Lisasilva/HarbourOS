@@ -26,7 +26,7 @@ Live dashboard: https://harbouros.pages.dev/
 - **Pandas** — data manipulation
 - **Observable Framework (Node/npm)** — the dashboard app
 - **pytest, ruff, black, mypy, pre-commit** — testing and code quality
-- **GitHub Actions** — CI (lint/test on PR) + hourly production pipeline cron
+- **GitHub Actions** — CI (lint/test on PR) + the production pipeline (about 4 runs a day)
 - **BarentsWatch Live API** — Norwegian maritime authority AIS data source
 
 ## Directory Structure
@@ -37,7 +37,7 @@ HarbourOS/
 ├── scripts/ # Ops/exploration scripts (backfill, migration, data checks)
 ├── dashboard/ # Observable Framework dashboard app
 ├── tests/ # pytest suite
-└── .github/workflows/ # ci.yml (lint/test) and pipeline.yml (hourly pipeline)
+└── .github/workflows/ # ci.yml (lint/test) and pipeline.yml (production pipeline)
 
 ## Running Locally
 ```bash
@@ -49,15 +49,16 @@ pytest tests/ -v
 ## Deployment
 Everything deploys automatically from `.github/workflows/pipeline.yml`
 (and it can be started by hand from the Actions tab). Each run:
-1. Collects live AIS positions every 10 minutes for 50 minutes
+1. Collects live AIS positions every 10 minutes for 330 minutes
    (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
    states and port calls and runs `dbt build` (all against MotherDuck,
    `HARBOUROS_DB=md:harbouros`). Each run on `master` starts the next one when
    it ends (a 6-hourly schedule only restarts the chain if it breaks, e.g.
    after a run is cancelled by hand), so collection is continuous and the site
-   updates about every hour (runs collected for 330
-   minutes and updated about 4 times a day until 2026-09-28; hourly is for
-   testing and costs about 6 times the MotherDuck compute). For a quick manual
+   updates about 4 times a day. Hourly runs (50 minutes of collection) were
+   tried on 2026-09-28/29 and dropped: they grew MotherDuck storage to 2.5 GB
+   in a day and a half, mostly "failsafe" copies of rewritten tables, which
+   count toward the 10 GB allowance. For a quick manual
    test, set "collect_minutes" to something small.
 2. If all of that succeeds, build the dashboard (`dashboard/`). Its data
    loader `dashboard/src/data/port_calls.csv.py` reads the fresh Gold tables
@@ -101,9 +102,10 @@ cd dashboard && npm run deploy
   than `master` publishes only to a Cloudflare *preview* address, so the live
   site stays untouched.
 - To test dashboard changes, push to a branch named `dashboard-*`. The
-  "Dashboard preview" workflow rebuilds only `dim_vessel` and `fct_vessel_track`,
+  "Dashboard preview" workflow reads master's Gold tables (it rebuilds
+  `dim_vessel` and `fct_vessel_track` only if the branch changes `dbt/`),
   builds the site and publishes it to `https://<branch>.harbouros.pages.dev`,
-  without collecting data or queueing behind the hourly runs. It also pushes
+  without collecting data or queueing behind the pipeline runs. It also pushes
   screenshots and a page-error report to the `preview-screenshots` branch
   (folder per branch), which is how Claude checks a preview it can't open.
 

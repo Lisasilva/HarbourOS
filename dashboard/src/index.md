@@ -190,6 +190,9 @@ const select = (value) => {
 ```
 
 ```js
+// A new run publishes about every 5.5 hours, so data older than 7 hours means
+// a run is late or failing.
+const STALE_MS = 7 * 36e5;
 const minuteClock = Generators.observe((notify) => {
   notify(Date.now());
   const id = setInterval(() => notify(Date.now()), 60_000);
@@ -201,13 +204,58 @@ const minuteClock = Generators.observe((notify) => {
   <h1>HarbourOS</h1>
   <p>Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds.</p>
   ${freshness.latest_reading
-    ? html`<span class="fresh ${minuteClock - latest > 3 * 36e5 ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} Norway time (${ago(minuteClock - latest)})${minuteClock - latest > 3 * 36e5 ? " · updates may be paused" : ""}</span>`
+    ? html`<span class="fresh ${minuteClock - latest > STALE_MS ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} Norway time (${ago(minuteClock - latest)})${minuteClock - latest > STALE_MS ? " · updates may be paused" : ""}</span>`
     : html`<span class="fresh stale"><span class="dot"></span>No data yet</span>`}
-  <svg class="waves" viewBox="0 0 1200 46" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0 22 C 150 6, 300 38, 450 22 S 750 6, 900 22 S 1100 38, 1200 22 V46 H0 Z" fill="#617891" opacity="0.35"/>
-    <path d="M0 30 C 200 16, 350 44, 600 30 S 950 16, 1200 30 V46 H0 Z" fill="#f8f3ea"/>
-  </svg>
+  ${sea}
 </section>
+
+```js
+// The header's sea: three rows of waves rolling past at different speeds, a
+// small sailing ship rocking between them, and two gulls. Each wave is drawn
+// twice as wide as the header and slid left by half its width on a loop, so
+// it never visibly restarts. Visitors who ask for reduced motion get a still
+// picture (see style.css).
+const sea = (() => {
+  const wave = (base, amp, count, phase) => {
+    const points = d3.range(0, 2401, 20).map((x) => {
+      const a = (2 * Math.PI * count * x) / 1200 + phase;
+      return `${x} ${(base + amp * Math.sin(a) + amp * 0.35 * Math.sin(2 * a + phase)).toFixed(1)}`;
+    });
+    return `M${points.join(" L")} V90 H0 Z`;
+  };
+  const row = (name, d, fill) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    el.setAttribute("class", `wave ${name}`);
+    el.setAttribute("viewBox", "0 0 2400 90");
+    el.setAttribute("preserveAspectRatio", "none");
+    el.innerHTML = `<path d="${d}" style="fill: ${fill}"/>`;
+    return el;
+  };
+  return html`<div class="sea" aria-hidden="true">
+    <svg class="gulls" viewBox="0 0 60 24">
+      <path d="M2 10 Q7 4 12 10 Q17 4 22 10"/>
+      <path d="M34 18 Q38 13 42 18 Q46 13 50 18"/>
+    </svg>
+    ${row("back", wave(34, 7, 2, 0), "#3f5a80")}
+    ${row("mid", wave(46, 6, 3, 1.3), "#617891")}
+    <div class="ship-drift"><div class="ship-rock">
+      <svg class="ship" viewBox="0 0 140 120">
+        <path d="M70 12 V90" stroke="#3a2a20" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M70 12 L86 16.5 L70 21 Z" fill="#8a2c31"/>
+        <path d="M73 20 C 99 38, 108 62, 101 84 L73 84 Z" fill="#fbf6ee"/>
+        <path d="M73 20 C 90 36, 97 55, 95 72" fill="none" stroke="#e3d6c1" stroke-width="1.2"/>
+        <path d="M67 26 C 52 44, 40 64, 28 84 L67 84 Z" fill="#d5b893"/>
+        <path d="M8 88 L134 84 Q126 102 110 108 L34 108 Q18 102 8 88 Z" fill="#6f4d38"/>
+        <path d="M8 88 L134 84 L132 89 L10 93 Z" fill="#632024"/>
+        <circle cx="52" cy="97" r="2.4" fill="#d5b893"/>
+        <circle cx="70" cy="96.5" r="2.4" fill="#d5b893"/>
+        <circle cx="88" cy="96" r="2.4" fill="#d5b893"/>
+      </svg>
+    </div></div>
+    ${row("front", wave(60, 5, 2, 2.4), "#f8f3ea")}
+  </div>`;
+})();
+```
 
 ```js
 const groupCounts = d3.rollup(liveShips, (v) => v.length, (d) => d.group);
@@ -258,11 +306,11 @@ const WATER = "#c9d7e4";
 const LAND = "#f5eee2";
 
 // The base map is OpenFreeMap's free vector tiles (no account or key),
-// recoloured into the palette. If they can't be reached, the ships are still
-// drawn on plain water.
+// recoloured into the palette. If they can't be reached within a few seconds,
+// the ships are still drawn on plain water.
 async function baseStyle() {
   try {
-    const response = await fetch("https://tiles.openfreemap.org/styles/positron");
+    const response = await fetch("https://tiles.openfreemap.org/styles/positron", {signal: AbortSignal.timeout(8000)});
     if (!response.ok) throw new Error(response.statusText);
     const style = await response.json();
     for (const layer of style.layers) {
@@ -350,16 +398,26 @@ const HOME_VIEW = {center: [13, 64.2], zoom: 4.1};
 <div class="map-wrap">${mapCard}</div>
 
 ```js
+// If the browser can't draw the map at all (no WebGL, say), `map` is null:
+// the map area says so, and the rest of the page works without it.
 const map = await (async () => {
-  const m = new maplibregl.Map({
-    container: mapCard.querySelector(".map-canvas"),
-    style: await baseStyle(),
-    center: [13, 64.2],
-    zoom: 4.1,
-    minZoom: 3,
-    maxZoom: 14,
-    attributionControl: false
-  });
+  const canvas = mapCard.querySelector(".map-canvas");
+  let m;
+  try {
+    m = new maplibregl.Map({
+      container: canvas,
+      style: await baseStyle(),
+      center: [13, 64.2],
+      zoom: 4.1,
+      minZoom: 3,
+      maxZoom: 14,
+      attributionControl: false
+    });
+  } catch (error) {
+    console.error(error);
+    canvas.replaceChildren(html`<p class="map-unavailable">The map can't be shown in this browser. The charts below still work.</p>`);
+    return null;
+  }
   m.addControl(new maplibregl.AttributionControl({compact: true}), "bottom-left");
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
   // A button under the zoom buttons that goes back to the whole coast, for
@@ -559,7 +617,7 @@ const replayTime = Generators.input(replayInput);
 
 ```js
 // Ships on the map: live positions, or the replay's moment in the last 24 hours.
-{
+if (map) {
   const shown = (replayTime == null ? liveShips : positionsAt(replayTime)).filter((d) => activeGroups.has(d.group));
   map.getSource("ships").setData({
     type: "FeatureCollection",
@@ -583,7 +641,7 @@ const replayTime = Generators.input(replayInput);
 ```js
 // The selected ship's route (last 3 days) with direction chevrons, and the
 // ports it stopped at along the way.
-{
+if (map) {
   const mmsi = selection?.kind === "ship" ? selection.mmsi : null;
   map.setFilter("ship-selected", ["==", ["get", "mmsi"], mmsi ?? -1]);
   const points = mmsi == null ? [] : routeOf(mmsi);
@@ -975,5 +1033,5 @@ Every 10 minutes, Python collects the positions all ships along the coast are br
 (BarentsWatch AIS). SQL cleans them into a trusted layer, setting aside every rejected row with
 a reason. A Python state machine turns each ship's positions into stops, each with a confidence
 score, and dbt matches every stop to the nearest official port and builds the tables this page
-reads, including each ship's route. GitHub Actions runs the whole chain about once an hour and
+reads, including each ship's route. GitHub Actions runs the whole chain about four times a day and
 republishes this page. It is a static snapshot, so no database is exposed to the internet.

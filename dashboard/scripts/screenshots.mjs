@@ -75,6 +75,7 @@ async function clickFeature(page, layer) {
 
 const {page, loaded} = await open({width: 1440, height: 1000});
 await page.screenshot({path: `${out}/1-page.png`});
+await page.locator(".hero").screenshot({path: `${out}/0-header.png`});
 await page.screenshot({path: `${out}/2-full-page.png`, fullPage: true});
 if (loaded) {
 report.push(`kpis: ${(await page.locator(".kpi .value").allInnerTexts()).join(" | ")}`);
