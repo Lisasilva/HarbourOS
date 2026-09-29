@@ -163,7 +163,13 @@ const ago = (ms) => {
   const h = ms / 36e5;
   return h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 48 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} days ago`;
 };
-const when = (d) => d.toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+// Every time on the page is Norway's time (CET in winter, CEST in summer),
+// wherever the visitor is, since that's where the ships are.
+const TZ = "Europe/Oslo";
+const when = (d) => d.toLocaleString("en-GB", {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ});
+const weekday = (d) => d.toLocaleDateString("en-GB", {weekday: "short", timeZone: TZ});
+const hourFormat = new Intl.DateTimeFormat("en-GB", {hour: "numeric", hourCycle: "h23", timeZone: TZ});
+const norwayHour = (d) => +hourFormat.format(d);
 const stay = (minutes) => (minutes < 90 ? `${Math.round(minutes)} min` : minutes < 48 * 60 ? `${d3.format(".1f")(minutes / 60)} h` : `${d3.format(".1f")(minutes / 1440)} days`);
 const confidenceBand = (c) => (c >= 0.8 ? "high" : c >= 0.5 ? "medium" : "low");
 const compass = (deg) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
@@ -195,7 +201,7 @@ const minuteClock = Generators.observe((notify) => {
   <h1>HarbourOS</h1>
   <p>Live ship traffic and port calls along the Norwegian coast, from the positions ships broadcast every few seconds.</p>
   ${freshness.latest_reading
-    ? html`<span class="fresh ${minuteClock - latest > 3 * 36e5 ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} (${ago(minuteClock - latest)})${minuteClock - latest > 3 * 36e5 ? " · updates may be paused" : ""}</span>`
+    ? html`<span class="fresh ${minuteClock - latest > 3 * 36e5 ? "stale" : ""}"><span class="dot"></span>Data last updated ${when(latest)} Norway time (${ago(minuteClock - latest)})${minuteClock - latest > 3 * 36e5 ? " · updates may be paused" : ""}</span>`
     : html`<span class="fresh stale"><span class="dot"></span>No data yet</span>`}
   <svg class="waves" viewBox="0 0 1200 46" preserveAspectRatio="none" aria-hidden="true">
     <path d="M0 22 C 150 6, 300 38, 450 22 S 750 6, 900 22 S 1100 38, 1200 22 V46 H0 Z" fill="#617891" opacity="0.35"/>
@@ -333,9 +339,12 @@ const mapCard = html`<div class="map-card">
     <span><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#25344f"/></svg> stopped</span>
     <span><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="rgb(99 32 36 / 0.15)" stroke="#632024" stroke-width="1.5"/></svg> port</span>
   </div>
+  <div class="map-search"></div>
   <aside class="map-panel"></aside>
   <div class="map-replay"></div>
 </div>`;
+// The map's starting view, which the reset button goes back to.
+const HOME_VIEW = {center: [13, 64.2], zoom: 4.1};
 ```
 
 <div class="map-wrap">${mapCard}</div>
@@ -353,6 +362,23 @@ const map = await (async () => {
   });
   m.addControl(new maplibregl.AttributionControl({compact: true}), "bottom-left");
   m.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-left");
+  // A button under the zoom buttons that goes back to the whole coast, for
+  // when a visitor has zoomed or panned too far to tell where they are.
+  m.addControl(
+    {
+      onAdd() {
+        const group = html`<div class="maplibregl-ctrl maplibregl-ctrl-group">
+          <button type="button" class="reset-view" title="Show the whole coast" aria-label="Show the whole coast">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" fill="none" stroke="#25344f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>`;
+        group.querySelector("button").onclick = () => m.flyTo({...HOME_VIEW, duration: 900});
+        return group;
+      },
+      onRemove() {}
+    },
+    "top-left"
+  );
   invalidation.then(() => m.remove());
   await new Promise((resolve) => m.on("load", resolve));
   // For the preview workflow's screenshots (dashboard/scripts/screenshots.mjs).
@@ -595,6 +621,82 @@ const replayTime = Generators.input(replayInput);
 ```
 
 ```js
+// The search box: type part of a port's or ship's name (or a ship's MMSI) and
+// pick a match to open it, just as if it had been clicked on the map.
+{
+  const plain = (text) =>
+    String(text ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/ø/g, "o")
+      .replace(/æ/g, "ae");
+  const entries = [
+    ...d3.sort(ports, (p) => -p.calls).map((p) => ({label: p.name, note: "Port", color: null, search: plain(p.name), pick: {kind: "port", locode: p.locode}})),
+    ...ships.map((s) => ({label: shipName(s), note: s.group, color: groupColor[s.group], search: `${plain(shipName(s))} ${s.mmsi}`, pick: {kind: "ship", mmsi: s.mmsi}}))
+  ];
+  const input = html`<input type="search" placeholder="Find a port or ship" aria-label="Find a port or ship" autocomplete="off" spellcheck="false">`;
+  const list = html`<ul class="results" role="listbox" hidden></ul>`;
+  let matches = [];
+  let active = 0;
+  const choose = (m) => {
+    select(m.pick);
+    input.value = m.label;
+    matches = [];
+    show();
+    input.blur();
+  };
+  const show = () => {
+    list.replaceChildren(
+      ...matches.map((m, i) => {
+        const item = html`<li role="option" class=${i === active ? "active" : ""}>
+          <span>${m.color ? html`<span class="swatch" style="background:${m.color}"></span>` : html`<span class="port-dot"></span>`}${m.label}</span>
+          <span class="meta">${m.note}</span>
+        </li>`;
+        // pointerdown, not click, so the pick happens before the box loses focus.
+        item.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          choose(m);
+        });
+        return item;
+      })
+    );
+    list.hidden = matches.length === 0;
+  };
+  input.addEventListener("input", () => {
+    const q = plain(input.value.trim());
+    active = 0;
+    if (q.length < 2) matches = [];
+    else {
+      const starts = entries.filter((e) => e.search.startsWith(q));
+      const within = entries.filter((e) => !e.search.startsWith(q) && e.search.includes(q));
+      matches = [...starts, ...within].slice(0, 8);
+    }
+    show();
+  });
+  input.addEventListener("keydown", (e) => {
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && matches.length) {
+      e.preventDefault();
+      active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
+      show();
+    } else if (e.key === "Enter" && matches.length) {
+      e.preventDefault();
+      choose(matches[active]);
+    } else if (e.key === "Escape") {
+      matches = [];
+      show();
+      input.blur();
+    }
+  });
+  input.addEventListener("blur", () => {
+    matches = [];
+    show();
+  });
+  mapCard.querySelector(".map-search").replaceChildren(input, list);
+}
+```
+
+```js
 // The side panel: a ship's profile, a port's card, or a short guide.
 {
   const panel = mapCard.querySelector(".map-panel");
@@ -645,7 +747,7 @@ const replayTime = Generators.input(replayInput);
         <div><b>${here.length}</b><span>ships in port now</span></div>
         <div><b>${finished.length ? stay(d3.median(finished, (d) => d.minutes_alongside)) : "–"}</b><span>typical stay</span></div>
       </div>
-      <h4>Arrivals by hour of day</h4>
+      <h4>Arrivals by hour of day (Norway time)</h4>
       ${Plot.plot({
         height: 120,
         width: 300,
@@ -654,7 +756,7 @@ const replayTime = Generators.input(replayInput);
         x: {label: null, tickFormat: (h) => `${h}:00`, ticks: [0, 6, 12, 18]},
         y: {label: null, grid: true, ticks: 3},
         marks: [
-          Plot.rectY(portCalls, Plot.binX({y: "count"}, {x: (d) => d.berth_start.getHours(), interval: 1, domain: [0, 24], fill: "#617891", inset: 1, rx: 2, tip: true})),
+          Plot.rectY(portCalls, Plot.binX({y: "count"}, {x: (d) => norwayHour(d.berth_start), interval: 1, domain: [0, 24], fill: "#617891", inset: 1, rx: 2, tip: true})),
           Plot.ruleY([0], {stroke: "#d5b893"})
         ]
       })}
@@ -671,7 +773,7 @@ const replayTime = Generators.input(replayInput);
     const nameToLocode = new Map(ports.map((p) => [p.name, p.locode]));
     panel.replaceChildren(html`
       <h3>Explore the coast</h3>
-      <p class="status">Click a ship to see where it has been and where it stopped, or a port to see who is there. Press Play to replay the last 24 hours.</p>
+      <p class="status">Click a ship to see its route over the last 3 days and where it stopped, or a port to see who is there. You can also search for either above. Press Play to watch every ship move over the last 24 hours.</p>
       <h4>Busiest ports right now</h4>
       <ul>${busiest.map(([name, n]) => html`<li><button onclick=${() => nameToLocode.has(name) && select({kind: "port", locode: nameToLocode.get(name)})}>${name}</button><span class="meta">${n} ships in port</span></li>`)}</ul>
     `);
@@ -689,7 +791,7 @@ function stopStrip(visits) {
     marginLeft: 90,
     marginRight: 8,
     style: {fontSize: "10px", color: "#4a5972"},
-    x: {domain: [weekAgo, latest], label: null, ticks: 4, tickFormat: d3.utcFormat("%a")},
+    x: {domain: [weekAgo, latest], label: null, ticks: 4, tickFormat: weekday},
     y: {domain: rows, label: null},
     marks: [
       Plot.ruleX([weekAgo, latest], {stroke: "#efe5d4"}),
