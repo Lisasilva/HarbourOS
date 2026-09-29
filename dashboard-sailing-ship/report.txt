@@ -1,12 +1,39 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x38640013b000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
-kpis: 3,801 | 917 | 2,712 | 14,424
-ships drawn: 6033
+console warning: [.WebGL-0x10fc018b0c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x10fc018b0c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x10fc018b0c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x10fc018b0c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+kpis: 3,816 | 880 | 2,818 | 14,561
+ships drawn: 6058
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/17/8.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/17/7.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/16/8.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/16/7.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/18/8.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/5/18/7.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/34/16.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/34/15.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/33/16.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/33/15.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/35/16.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/6/35/15.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/67/31.pbf net::ERR_ABORTED
-clicked moving ship: KB ROKK
-ship panel: × Cargo · MMSI 258025160 KB ROKK Under way at 9.0 knots, heading SE. Last seen Tue, Sep 29, 08:47 AM (28 min ago) 40 nautical miles sailed (3 days) 3 port calls this week 13.0 h typical stay STOPS THIS WEEK At sea Lovund Luroy Thu Sat Mon LATEST STOPS At sea Mon, Sep 28, 03:18 PM · 17.0 h medium Lov
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/68/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/69/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/68/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/69/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/7/67/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/138/64.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/138/63.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/135/64.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/135/63.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/137/64.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/136/64.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/137/63.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/8/136/63.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/9/272/128.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260913_164504_pt/9/272/127.pbf net::ERR_ABORTED
+clicked moving ship: LOVUND
+ship panel: × Passenger & ferries · MMSI 258694000 LOVUND Under way at 14.8 knots, heading N. Last seen Tue, Sep 29, 09:28 AM (3 min ago) 210 nautical miles sailed (3 days) 8 port calls this week 5.3 h typical stay STOPS THIS WEEK Stokkvagen Trana Thu Sat Mon LATEST STOPS Stokkvagen Tue, Sep 29, 06:42 AM · 21 m
 clicked port: Tonnes
 console warning: using deprecated parameters for the initialization function; pass a single object instead
