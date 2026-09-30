@@ -1,13 +1,18 @@
 # HarbourOS: Norwegian Maritime AIS Port-Call Intelligence
 
 ## Project Overview
-HarbourOS is a real-time streaming data platform that converts raw AIS
+HarbourOS is a micro-batch data pipeline that converts raw AIS
 (Automatic Identification System) ship-tracking data from Norway's
 BarentsWatch Live API into structured port-call events with a confidence
-score. Data flows through a medallion architecture:
-- **Bronze**: raw AIS messages (Server-Sent Events from BarentsWatch)
+score. It polls the API's REST endpoint every 10 minutes (not a stream) and
+publishes about 4 times a day. Data flows through a medallion architecture:
+- **Bronze**: raw AIS positions, as received from BarentsWatch
 - **Silver**: deduplicated, typed, plausibility-checked messages
-- **Gold**: star schema with a port-call fact table and vessel dimensions
+- **Gold**: star schema with a port-call fact table, a vessel-track fact
+  table and vessel, port and date dimensions
+
+The README is the short overview; `docs/engineering-diary.md` is the full
+history, design decisions and interview notes. Keep both in step with the code.
 
 Live dashboard: https://harbouros.pages.dev/
 
@@ -37,11 +42,12 @@ HarbourOS/
 ├── scripts/ # Ops/exploration scripts (backfill, migration, data checks)
 ├── dashboard/ # Observable Framework dashboard app
 ├── tests/ # pytest suite
-└── .github/workflows/ # ci.yml (lint/test) and pipeline.yml (production pipeline)
+├── docs/ # engineering diary (full project history and design notes)
+└── .github/workflows/ # ci.yml, pipeline.yml (production), preview.yml, audit.yml
 
 ## Running Locally
 ```bash
-uv sync --all-extras
+uv sync
 pre-commit install
 pytest tests/ -v
 ```
@@ -150,15 +156,19 @@ Done:
 - 1. Pipeline runs on time: 10-minute collection (PR #4), each run starting the
   next (PR #11).
 - 2. Data-quality audit (PR #5), its fixes (PRs #6-#8), and a re-run on
-  2026-09-28: 78% of visits now fully observed.
+  2026-09-28.
 - 3. "Data last updated" on the dashboard (PR #12) and a failure alert issue
   (PR #11).
 - 4. Dagster's 100-ship cap removed; GitHub Actions is production, Dagster is
   for local runs.
-- 5. README rewritten.
+- 5. README rewritten (PR #13), then again with the engineering diary.
+- 6. Dashboard redesign: live map, routes, replay, search (PRs #14, #16-#19),
+  and the completeness fix (PR #15).
 
 Next:
-6. Dashboard redesign: propose first, and wait for approval. Include what the
-   2026-09-28 audit found: ~1,600 stops 10-25 km from a listed port (likely
-   quays missing from UN/LOCODE), and ferry quays crowding "busiest ports".
-7. Portfolio write-up of the architecture, published as an artifact.
+- AI features, designed but not built: collect the AIS destination field,
+  resolve destinations to UN/LOCODE, then a slim unusual-behaviour stage;
+  ETA prediction later (see the diary's AI roadmap).
+- Quays missing from UN/LOCODE (~1,600 stops 10-25 km from a listed port in
+  the 2026-09-28 audit).
+- Re-run the data audit.
