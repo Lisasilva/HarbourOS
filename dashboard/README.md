@@ -1,59 +1,40 @@
-# HarbourOS
+# HarbourOS dashboard
 
-This is an [Observable Framework](https://observablehq.com/framework/) app. To install the required dependencies, run:
+The public site at https://harbouros.pages.dev/, built with
+[Observable Framework](https://observablehq.com/framework/). It is one page
+(`src/index.md`): a live map of ships on the Norwegian coast, each ship's route
+over the last 3 days, a 24-hour replay, port and ship search, and charts of the
+week's port calls.
 
-```
-npm install
-```
+## Where the data comes from
 
-Then, to start the local preview server, run:
+Framework runs the Python data loaders in `src/data/` at build time, through
+`uv run python` (see `interpreters` in `observablehq.config.js`), so they can
+import `HarbourOS` and read the warehouse named by `HARBOUROS_DB`:
 
-```
-npm run dev
-```
+| Loader | Serves | Reads |
+|---|---|---|
+| `port_calls.csv.py` | every port call, with ship and port names and an `in_port_now` flag | `fact_port_call`, `dim_vessel`, `dim_port` |
+| `ships.csv.py` | each ship's latest position and last port | `fct_vessel_track`, `fact_port_call` |
+| `tracks.parquet.py` | the last 3 days of routes, thinned to points where a ship moved | `fct_vessel_track` |
+| `freshness.json.py` | when the newest AIS reading was, and when the build ran | `ais_messages_silver` |
 
-Then visit <http://localhost:3000> to preview your app.
+The built site is static files only; no database is reachable from it.
 
-For more, see <https://observablehq.com/framework/getting-started>.
+## Commands
 
-## Project structure
+Run from this folder, with `HARBOUROS_DB` (and `MOTHERDUCK_TOKEN` for
+MotherDuck) set in the repo's `.env` or the environment:
 
-A typical Framework project looks like this:
+| Command | What it does |
+|---|---|
+| `npm ci` | install dependencies |
+| `npm run dev` | local preview at http://localhost:3000 |
+| `npm run build` | build the static site into `dist/` |
+| `npm run deploy` | build and upload to Cloudflare Pages (needs `npx wrangler login`) |
+| `npm run clean` | clear the data-loader cache |
 
-```ini
-.
-├─ src
-│  ├─ components
-│  │  └─ timeline.js           # an importable module
-│  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
-│  └─ index.md                 # the home page
-├─ .gitignore
-├─ observablehq.config.js      # the app config file
-├─ package.json
-└─ README.md
-```
-
-**`src`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/project-structure#routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
-
-**`src/index.md`** - This is the home page for your app. You can have as many additional pages as you’d like, but you should always have a home page, too.
-
-**`src/data`** - You can put [data loaders](https://observablehq.com/framework/data-loaders) or static data files anywhere in your source root, but we recommend putting them here.
-
-**`src/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
-
-**`observablehq.config.js`** - This is the [app configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the app’s title.
-
-## Command reference
-
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm install`            | Install or reinstall dependencies                        |
-| `npm run dev`        | Start local preview server                               |
-| `npm run build`      | Build your static site, generating `./dist`              |
-| `npm run deploy`     | Deploy your app to Observable                            |
-| `npm run clean`      | Clear the local data loader cache                        |
-| `npm run observable` | Run commands like `observable help`                      |
+In production the Pipeline workflow builds and deploys the site after each
+successful run. Pushing a branch named `dashboard-*` publishes a preview to
+`https://<branch>.harbouros.pages.dev` (see `.github/workflows/preview.yml`),
+and `scripts/screenshots.mjs` takes screenshots of it.

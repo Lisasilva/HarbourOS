@@ -1,7 +1,7 @@
 """Dagster orchestration: the pipeline as a dependency graph, for local runs.
 
 Production does not use this file. The live pipeline is
-.github/workflows/pipeline.yml, which collects for about an hour per run and
+.github/workflows/pipeline.yml, which collects for about 5.5 hours per run and
 starts the next run itself (see CLAUDE.md). This is the same chain for a
 laptop: every table is an asset that declares its upstreams, so Dagster works
 out what to run and in what order, keeps run history, and shows the lineage in
