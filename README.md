@@ -142,28 +142,6 @@ Other workflows: `ci.yml` (lint, types, tests on every PR), `preview.yml`
 (builds `dashboard-*` branches to a preview address without collecting), and
 `audit.yml` (a manual, read-only data-quality report).
 
-## Limitations
-
-- **Refresh rate:** the dashboard updates about every 5.5 hours, not in real
-  time. Faster runs were tried and exceeded MotherDuck's free storage.
-- **Port list:** UN/LOCODE marks towns, not quays, and lists only Norwegian and
-  Svalbard ports. Some real quays are missing, so some stops show as `at_sea`
-  or match a port a few kilometres away.
-- **Short history:** 10-minute collection started on 2026-09-26. Older data
-  came from sparse snapshots and a one-off 24-hour backfill.
-- **No destination data yet:** the AIS destination, ETA, IMO number and call
-  sign are not collected.
-- **Rules, not machine learning:** the stop detection and confidence score are
-  hand-written rules.
-
-## Future work
-
-- Collect the AIS destination field and resolve free-text destinations to
-  UN/LOCODE port codes (designed, not built).
-- Unusual-behaviour detection and ETA prediction (designed, not built).
-- Add quays missing from UN/LOCODE, which the audit found as clusters of stops
-  10–25 km from any listed port.
-
 ## Repository layout
 
 ```
