@@ -115,6 +115,15 @@ jobs:
             exit 1
           fi
 
+      # An independent check of 100 random port calls from this run against
+      # OpenStreetMap's map of quays (src/HarbourOS/reliability.py); the
+      # dashboard shows the result. The map is downloaded at most once a month.
+      # If OpenStreetMap's servers are down, the site still updates and shows
+      # the previous check.
+      - name: Check 100 random port calls against OpenStreetMap
+        continue-on-error: true
+        run: uv run python -m HarbourOS.reliability
+
       # Publish the dashboard. It runs only if every step above succeeded, so
       # the live site never shows a half-built warehouse. The Python data
       # loader in dashboard/src/data reads the fresh Gold tables from

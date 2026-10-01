@@ -58,7 +58,9 @@ Everything deploys automatically from `.github/workflows/pipeline.yml`
 1. Collects live AIS positions every 10 minutes for 330 minutes
    (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
    states and port calls and runs `dbt build` (all against MotherDuck,
-   `HARBOUROS_DB=md:harbouros`). Each run on `master` starts the next one when
+   `HARBOUROS_DB=md:harbouros`), then checks 100 random port calls from the run
+   against OpenStreetMap's quays (`HarbourOS.reliability`, the reliability tile
+   on the site; it never blocks the deploy). Each run on `master` starts the next one when
    it ends (a 6-hourly schedule only restarts the chain if it breaks, e.g.
    after a run is cancelled by hand), so collection is continuous and the site
    updates about 4 times a day. Hourly runs (50 minutes of collection) were

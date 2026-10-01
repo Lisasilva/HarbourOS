@@ -4,7 +4,9 @@ HarbourOS turns the raw positions that ships broadcast along the Norwegian coast
 (AIS, via the BarentsWatch API) into **port calls**: one row per ship stopping
 once, with the port it stopped at, how long it stayed, whether we saw it arrive
 and leave, and a **confidence score**. A live map dashboard is rebuilt from the
-results about four times a day.
+results about four times a day. Each refresh also checks 100 random port calls
+against an independent source, OpenStreetMap's map of quays, and the site shows
+how many hold up.
 
 **Live dashboard:** https://harbouros.pages.dev/
 
@@ -129,11 +131,15 @@ Production is `.github/workflows/pipeline.yml`. Each run:
    uploads them to Bronze in one statement;
 2. builds Silver, state periods and port calls, then `dbt build` (models and
    tests) on MotherDuck;
-3. builds the dashboard (its Python data loaders query Gold) and publishes it
-   to Cloudflare Pages, only if every earlier step passed;
-4. opens or updates a "Pipeline is failing" GitHub issue on failure, and closes
+3. checks 100 random port calls from the run against OpenStreetMap: confirmed
+   when the ship sat still within 300 m of a mapped quay, pier, harbour or
+   ferry terminal (`reliability.py`; the map is downloaded at most monthly);
+4. builds the dashboard (its Python data loaders query Gold) and publishes it
+   to Cloudflare Pages, only if every earlier step passed (a failed reliability
+   check doesn't block it; the site then shows the previous check);
+5. opens or updates a "Pipeline is failing" GitHub issue on failure, and closes
    it on the next success;
-5. starts the next run itself, so collection is continuous. A 6-hourly cron
+6. starts the next run itself, so collection is continuous. A 6-hourly cron
    only restarts the chain if it breaks.
 
 The site is static: visitors download pre-built CSV, JSON and Parquet files,
@@ -146,7 +152,8 @@ Other workflows: `ci.yml` (lint, types, tests on every PR), `preview.yml`
 
 ```
 src/HarbourOS/   collect and ingestion, storage (warehouse I/O), transform (Silver runner and
-                 incremental rebuilds), state_machine, port_calls, audit, orchestration (Dagster)
+                 incremental rebuilds), state_machine, port_calls, reliability, audit,
+                 orchestration (Dagster)
 sql/             Silver accept/reject rules
 dbt/             staging and mart models, UN/LOCODE port seed, data tests
 dashboard/       Observable Framework site and its Python data loaders

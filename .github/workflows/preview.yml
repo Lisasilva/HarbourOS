@@ -71,8 +71,16 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 
+      # The reliability check, without saving: its result goes to a file the
+      # dashboard reads instead of the warehouse (see reliability.json.py).
+      - name: Check 100 random port calls against OpenStreetMap (without saving)
+        continue-on-error: true
+        run: uv run python -m HarbourOS.reliability --no-save --json "$RUNNER_TEMP/reliability.json"
+
       - name: Build the dashboard
         working-directory: dashboard
+        env:
+          RELIABILITY_JSON: ${{ runner.temp }}/reliability.json
         run: |
           npm ci
           npm run build

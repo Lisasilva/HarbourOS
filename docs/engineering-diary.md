@@ -850,6 +850,9 @@ on a manual full-refresh run (bumped from the queue).
   time, reduced-motion support.
 - CI (lint, format, types, 64 tests), dashboard previews with screenshots,
   read-only data audit.
+- Automatic reliability check (2026-10-01): every run tests 100 random port
+  calls against OpenStreetMap's quays, piers, harbours and ferry terminals,
+  and the site shows how many were confirmed (`reliability.py`).
 
 ### Partially completed
 
@@ -888,6 +891,8 @@ on a manual full-refresh run (bumped from the queue).
   match distance.
 - GitHub Actions jobs are capped at 6 hours, which sets the 330-minute
   collection length.
+- The reliability check confirms place and stillness, not exact times, and
+  OpenStreetMap leaves out some small quays, so real port calls can fail it.
 
 ---
 
@@ -1074,6 +1079,14 @@ for 11 hours. Speed is GPS-measured, so it decides the state; status only
 raises or lowers confidence: 1.0 if they agree, 0.5 with no usable status,
 0.3 if they contradict.
 
+**Q: How do you know the port calls are right?**
+A: The confidence score only says the ship's own signals agree, so I don't
+use it as proof. Every run, 100 random port calls are checked against an
+independent source, OpenStreetMap's map of quays and harbours: a call is
+confirmed if the ship sat still within 300 m of one. The site shows the
+latest result and lists the misses. It errs on the cautious side, because
+OpenStreetMap leaves out some small quays.
+
 **Q: How do you make it incremental?**
 A: Silver uses a watermark derived from the data itself: every Bronze row ends
 up in Silver or Quarantine, so the newest `received_at` in either is how far
@@ -1252,6 +1265,7 @@ next or a genuine question, not a list of hashtags.
 | 2026-09-27 | PR #5–#8: audit, Svalbard, `at_sea`, "in port now" |
 | 2026-09-28 | PR #9–#15: auto full refresh, chained runs + alerts, freshness, README, map redesign, completeness fix |
 | 2026-09-29/30 | PR #16–#19: header, safety checks, back to ~4 runs/day, search and Norway time |
+| 2026-10-01 | PR #21–#22: location evidence in the confidence score, destination and ETA collected; automatic reliability check against OpenStreetMap |
 
 ### Key numbers (source and date)
 
