@@ -166,6 +166,9 @@ Done:
 - 5. README rewritten (PR #13), then again with the engineering diary.
 - 6. Dashboard redesign: live map, routes, replay, search (PRs #14, #16-#19),
   and the completeness fix (PR #15).
+- 7. Automatic reliability check against OpenStreetMap, shown on the site
+  (PR #25), and fish-farm stops labelled instead of counted as port calls
+  (PR #26).
 
 Next:
 - AI features, designed but not built: collect the AIS destination field,
