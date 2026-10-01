@@ -20,6 +20,12 @@
 -- the North Sea fields. Those are real stops, just not port calls, so they
 -- get their own label rather than silently counting toward port traffic.
 --
+-- 'fish_farm' is a stop within 300 m of a fish farm. The reliability check
+-- (2026-10-01) found service boats parked at farms for hours, often within
+-- 10 km of a listed port, so they had been counted as port calls. A farm
+-- takes precedence over a nearby port: a boat moored at a farm is working
+-- there, not calling at the town. The farm's name is kept in fish_farm_name.
+--
 -- confidence combines two independent kinds of evidence that a stop was real.
 -- status_confidence is the state machine's score: does the status the crew
 -- typed agree with the speed the GPS measured? That says more about how
@@ -60,6 +66,27 @@ ports as (
     select * from {{ ref('dim_port') }}
 ),
 
+-- Bounding boxes, so "within 300 m" is a box test widened by 300 m (longitude
+-- degrees shrink towards the pole, hence the cos()). A farm is a few hundred
+-- metres across, so the box is close to its real outline.
+at_fish_farm as (
+    select
+        calls.mmsi,
+        calls.berth_start,
+        min(farms.name) as fish_farm_name
+    from calls
+    inner join {{ source('harbouros', 'fish_farms') }} as farms
+        on calls.stop_latitude
+            between farms.min_lat - {{ var('fish_farm_m', 300) }} / 111320.0
+            and farms.max_lat + {{ var('fish_farm_m', 300) }} / 111320.0
+        and calls.stop_longitude
+            between farms.min_lon
+                - {{ var('fish_farm_m', 300) }} / 111320.0 / cos(radians(calls.stop_latitude))
+            and farms.max_lon
+                + {{ var('fish_farm_m', 300) }} / 111320.0 / cos(radians(calls.stop_latitude))
+    group by calls.mmsi, calls.berth_start
+),
+
 distances as (
     select
         calls.mmsi,
@@ -93,14 +120,16 @@ select
         as port_call_key,
     calls.mmsi,
     case
-        when nearest.distance_km <= {{ var('port_match_km', 10) }}
+        when at_fish_farm.mmsi is null
+            and nearest.distance_km <= {{ var('port_match_km', 10) }}
         then nearest.port_locode
     end as port_locode,
     case
-        when nearest.distance_km <= {{ var('port_match_km', 10) }}
-        then 'port_call'
+        when at_fish_farm.mmsi is not null then 'fish_farm'
+        when nearest.distance_km <= {{ var('port_match_km', 10) }} then 'port_call'
         else 'at_sea'
     end as visit_type,
+    at_fish_farm.fish_farm_name,
     round(nearest.distance_km, 2) as nearest_port_km,
     cast(strftime(calls.arrival_time, '%Y%m%d') as integer) as arrival_date_key,
     calls.stop_type,
@@ -127,3 +156,6 @@ from calls
 left join nearest
     on nearest.mmsi = calls.mmsi
     and nearest.berth_start = calls.berth_start
+left join at_fish_farm
+    on at_fish_farm.mmsi = calls.mmsi
+    and at_fish_farm.berth_start = calls.berth_start

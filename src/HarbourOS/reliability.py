@@ -34,18 +34,15 @@ connection. The dashboard preview uses that, so previews never write.
 
 import argparse
 import json
-import math
 import random
-import tempfile
 import time
-from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import duckdb
-import requests
 
+from HarbourOS import osm
 from HarbourOS.storage import DB_PATH, connect
 
 SAMPLE_SIZE = 100
@@ -53,44 +50,8 @@ WINDOW_HOURS = 6
 NEAR_M = 300
 STILL_M = 300
 STILL_SHARE = 0.9
-MAP_MAX_AGE_DAYS = 30
-# A feature bigger than this (a whole fjord tagged as a harbour, say) is so
-# large that being "near" it proves nothing, so it is left out.
-MAX_FEATURE_KM = 3.0
-METRES_PER_DEGREE = 111_320
-
-OVERPASS_URLS = (
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-)
-# overpass-api.de turns away requests that don't say who is asking (HTTP 406).
-OVERPASS_HEADERS = {"User-Agent": "HarbourOS (https://github.com/Lisasilva/HarbourOS)"}
-
-# OpenStreetMap tags for places ships moor, as (key, values); None = any value.
-FEATURE_TAGS: tuple[tuple[str, tuple[str, ...] | None], ...] = (
-    ("man_made", ("pier", "quay")),
-    ("landuse", ("port",)),
-    ("industrial", ("port", "shipyard")),
-    ("harbour", ("yes",)),
-    ("seamark:type", ("harbour", "berth", "small_craft_facility")),
-    ("amenity", ("ferry_terminal",)),
-    ("leisure", ("marina",)),
-    ("waterway", ("dock",)),
-)
-
 VERDICTS = ("confirmed", "not_at_harbour", "moved", "too_little_data")
 
-HARBOUR_COLUMNS = {
-    "osm_id": "VARCHAR",
-    "kind": "VARCHAR",
-    "name": "VARCHAR",
-    "min_lat": "DOUBLE",
-    "min_lon": "DOUBLE",
-    "max_lat": "DOUBLE",
-    "max_lon": "DOUBLE",
-    "fetched_at": "TIMESTAMP",
-}
 CHECK_COLUMNS = {
     "checked_at": "TIMESTAMP",
     "seed": "BIGINT",
@@ -118,158 +79,29 @@ STOP_COLUMNS = {
 }
 
 
-def _now() -> datetime:
-    """UTC without a time zone, like every other timestamp in the warehouse."""
-    return datetime.now(UTC).replace(tzinfo=None)
-
-
 def overpass_query() -> str:
-    """Every mooring place in Norway and Svalbard: points, and boxes around shapes."""
-    filters = []
-    for key, values in FEATURE_TAGS:
-        if values is None:
-            filters.append(f'["{key}"]')
-        else:
-            filters.append(f'["{key}"~"^({"|".join(values)})$"]')
-    nodes = "".join(f"node{f}(area.norway);" for f in filters)
-    shapes = "".join(f"way{f}(area.norway);relation{f}(area.norway);" for f in filters)
-    return (
-        '[out:json][timeout:180];area["ISO3166-1"~"^(NO|SJ)$"]->.norway;'
-        f"({nodes})->.points;({shapes})->.shapes;.points out;.shapes out tags bb;"
-    )
-
-
-def _kind(tags: dict[str, str]) -> str:
-    for key, values in FEATURE_TAGS:
-        if key in tags and (values is None or tags[key] in values):
-            return tags[key].replace("_", " ")
-    return "harbour"
-
-
-def _span_km(min_lat: float, min_lon: float, max_lat: float, max_lon: float) -> float:
-    height = (max_lat - min_lat) * METRES_PER_DEGREE
-    width = (max_lon - min_lon) * METRES_PER_DEGREE * math.cos(math.radians(min_lat))
-    return math.hypot(height, width) / 1000
+    return osm.overpass_query(osm.HARBOUR_TAGS)
 
 
 def parse_features(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    """Turn an Overpass answer into one bounding box per feature."""
-    features = []
-    for element in payload.get("elements", []):
-        if "lat" in element:
-            box = (element["lat"], element["lon"], element["lat"], element["lon"])
-        elif "bounds" in element:
-            b = element["bounds"]
-            box = (b["minlat"], b["minlon"], b["maxlat"], b["maxlon"])
-        elif "center" in element:
-            c = element["center"]
-            box = (c["lat"], c["lon"], c["lat"], c["lon"])
-        else:
-            continue
-        if _span_km(*box) > MAX_FEATURE_KM:
-            continue
-        tags = element.get("tags", {})
-        features.append(
-            {
-                "osm_id": f"{element['type']}/{element['id']}",
-                "kind": _kind(tags),
-                "name": tags.get("name"),
-                "min_lat": box[0],
-                "min_lon": box[1],
-                "max_lat": box[2],
-                "max_lon": box[3],
-            }
-        )
-    return features
+    return osm.parse_features(payload, osm.HARBOUR_TAGS)
 
 
 def fetch_harbour_features() -> list[dict[str, Any]]:
-    """Download the map from the first Overpass server that answers."""
-    errors = []
-    for url in OVERPASS_URLS:
-        try:
-            response = requests.post(
-                url, data={"data": overpass_query()}, headers=OVERPASS_HEADERS, timeout=240
-            )
-            response.raise_for_status()
-            features = parse_features(response.json())
-        except (requests.RequestException, ValueError) as error:
-            errors.append(f"{url}: {error}")
-            continue
-        if features:
-            return features
-        errors.append(f"{url}: no features in the answer")
-    raise RuntimeError("Could not download the harbour map. " + "; ".join(errors))
-
-
-def _load(
-    conn: duckdb.DuckDBPyConnection,
-    statement: str,
-    rows: list[dict[str, Any]],
-    columns: dict[str, str],
-) -> None:
-    """Run `statement` with {rows} standing for the given rows.
-
-    The rows go through a JSON file rather than one INSERT each: tens of
-    thousands of map features would otherwise mean as many round trips to
-    MotherDuck.
-    """
-    with tempfile.TemporaryDirectory() as folder:
-        path = Path(folder) / "rows.json"
-        path.write_text("\n".join(json.dumps(row, default=str) for row in rows))
-        spec = ", ".join(f"'{name}': '{kind}'" for name, kind in columns.items())
-        source = f"read_json('{path}', format = 'newline_delimited', columns = {{{spec}}})"
-        conn.execute(statement.format(rows=source))
-
-
-def _schema(columns: dict[str, str]) -> str:
-    return ", ".join(f"{name} {kind}" for name, kind in columns.items())
-
-
-def _table_exists(conn: duckdb.DuckDBPyConnection, table: str) -> bool:
-    row = conn.execute(
-        "SELECT count(*) FROM information_schema.tables "
-        "WHERE table_catalog = current_database() AND table_schema = 'main' "
-        "AND table_name = ?",
-        [table],
-    ).fetchone()
-    return bool(row and row[0])
+    return osm.fetch_features(osm.HARBOUR_TAGS)
 
 
 def refresh_harbour_map(
     conn: duckdb.DuckDBPyConnection,
     save: bool = True,
-    fetch: Callable[[], list[dict[str, Any]]] = fetch_harbour_features,
+    fetch: osm.Fetch = fetch_harbour_features,
 ) -> int:
     """Make sure harbour_features is there and under 30 days old; return its size.
 
     If the download fails but an older map exists, the older map is used: a
     month-old map of quays is still a good map.
     """
-    saved = _table_exists(conn, "harbour_features")
-    if saved:
-        fetched_at, count = conn.execute(
-            "SELECT max(fetched_at), count(*) FROM main.harbour_features"
-        ).fetchone() or (None, 0)
-        if fetched_at and fetched_at > _now() - timedelta(days=MAP_MAX_AGE_DAYS):
-            return int(count)
-    try:
-        features = fetch()
-    except Exception as error:
-        if not saved:
-            raise
-        print(f"Keeping the saved harbour map: {error}")
-        return int(count)
-
-    fetched_at = _now()
-    temp = "" if save else "TEMP "
-    _load(
-        conn,
-        f"CREATE OR REPLACE {temp}TABLE harbour_features AS SELECT * FROM {{rows}}",
-        [{**feature, "fetched_at": fetched_at} for feature in features],
-        HARBOUR_COLUMNS,
-    )
-    return len(features)
+    return osm.refresh_layer(conn, "harbour_features", fetch, save=save, required=True)
 
 
 CANDIDATES = """
@@ -358,11 +190,11 @@ def run_check(
         key: (int(fixes), int(still), kind, name)
         for key, fixes, still, kind, name in conn.execute(
             EVIDENCE,
-            {"still_m": STILL_M, "near_deg": NEAR_M / METRES_PER_DEGREE},
+            {"still_m": STILL_M, "near_deg": NEAR_M / osm.METRES_PER_DEGREE},
         ).fetchall()
     }
 
-    checked_at = _now()
+    checked_at = osm.now()
     stops = []
     for key, mmsi, locode, berth_start, berth_end, lat, lon, _ in chosen:
         fixes, still, kind, name = evidence[key]
@@ -402,17 +234,19 @@ def _record(
     conn: duckdb.DuckDBPyConnection, summary: dict[str, Any], stops: list[dict], save: bool
 ) -> None:
     temp = "" if save else "TEMP "
-    conn.execute(f"CREATE {temp}TABLE IF NOT EXISTS reliability_checks ({_schema(CHECK_COLUMNS)})")
     conn.execute(
-        f"CREATE {temp}TABLE IF NOT EXISTS reliability_check_stops ({_schema(STOP_COLUMNS)})"
+        f"CREATE {temp}TABLE IF NOT EXISTS reliability_checks ({osm.schema(CHECK_COLUMNS)})"
     )
-    _load(
+    conn.execute(
+        f"CREATE {temp}TABLE IF NOT EXISTS reliability_check_stops ({osm.schema(STOP_COLUMNS)})"
+    )
+    osm.load_rows(
         conn,
         "INSERT INTO reliability_checks BY NAME SELECT * FROM {rows}",
         [summary],
         CHECK_COLUMNS,
     )
-    _load(
+    osm.load_rows(
         conn,
         "INSERT INTO reliability_check_stops BY NAME SELECT * FROM {rows}",
         stops,
