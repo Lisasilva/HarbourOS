@@ -1,0 +1,87 @@
+console warning: using deprecated parameters for the initialization function; pass a single object instead
+console warning: [.WebGL-0x340401bb8800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x340401bb8800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x340401bb8800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x340401bb8800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+console error: Error: <rect> attribute width: A negative value is not valid. ("-59.765625")
+kpis: 3,731 | 865 | 2,292 | 21,780
+ships drawn: 5988
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/67/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/68/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/69/31.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/68/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/69/32.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/67/32.pbf net::ERR_ABORTED
+clicked moving ship: OKSTIND
+ship panel: × Cargo · MMSI 257094710 OKSTIND Under way at 6.8 knots, heading SE. Last seen Thu 1 Oct, 17:37 (4 h ago) 19 nautical miles sailed (3 days) 2 port calls this week 29.5 h typical stay STOPS THIS WEEK At sea Tonnes Sat Mon Wed LATEST STOPS At sea Wed 30 Sept, 11:27 · 29.5 h low Tonnes Mon 28 Sept, 20:
+clicked port: Tonnes
+search "berg": Bergen Port | Bergsfjord Port | Bergneset Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEBUEN Fishing | BERG Passenger & ferries
+picked from search: Bergen
+after reset: zoom 4.1
+console warning: using deprecated parameters for the initialization function; pass a single object instead
