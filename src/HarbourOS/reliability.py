@@ -61,8 +61,11 @@ METRES_PER_DEGREE = 111_320
 
 OVERPASS_URLS = (
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 )
+# overpass-api.de turns away requests that don't say who is asking (HTTP 406).
+OVERPASS_HEADERS = {"User-Agent": "HarbourOS (https://github.com/Lisasilva/HarbourOS)"}
 
 # OpenStreetMap tags for places ships moor, as (key, values); None = any value.
 FEATURE_TAGS: tuple[tuple[str, tuple[str, ...] | None], ...] = (
@@ -185,7 +188,9 @@ def fetch_harbour_features() -> list[dict[str, Any]]:
     errors = []
     for url in OVERPASS_URLS:
         try:
-            response = requests.post(url, data={"data": overpass_query()}, timeout=600)
+            response = requests.post(
+                url, data={"data": overpass_query()}, headers=OVERPASS_HEADERS, timeout=600
+            )
             response.raise_for_status()
             features = parse_features(response.json())
         except (requests.RequestException, ValueError) as error:
