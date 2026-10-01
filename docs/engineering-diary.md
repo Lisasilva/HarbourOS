@@ -1268,7 +1268,7 @@ next or a genuine question, not a list of hashtags.
 | 2026-09-27 | PR #5–#8: audit, Svalbard, `at_sea`, "in port now" |
 | 2026-09-28 | PR #9–#15: auto full refresh, chained runs + alerts, freshness, README, map redesign, completeness fix |
 | 2026-09-29/30 | PR #16–#19: header, safety checks, back to ~4 runs/day, search and Norway time |
-| 2026-10-01 | PR #21–#22: location evidence in the confidence score, destination and ETA collected; automatic reliability check against OpenStreetMap |
+| 2026-10-01 | PR #21–#22, #25–#26: location evidence in the confidence score, destination and ETA collected; automatic reliability check against OpenStreetMap; fish-farm stops labelled |
 
 ### Key numbers (source and date)
 
