@@ -64,6 +64,10 @@ jobs:
             uv run dbt build --select dim_vessel fct_vessel_track
           fi
 
+      - name: Probe Kystverket (throwaway)
+        continue-on-error: true
+        run: uv run python scripts/probe_kystverket.py
+
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
