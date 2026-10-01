@@ -58,6 +58,38 @@ def _bulk_insert(
         conn.execute(f"INSERT INTO {table} ({column_list}) VALUES {values}", flattened)
 
 
+# Voyage fields, added 2026-10-01. Crews type them by hand, so they're stored
+# exactly as received; cleaning and matching happen downstream. The live feed
+# keeps no history, which is why they're collected before anything uses them.
+VOYAGE_COLUMNS = [
+    ("destination", "VARCHAR"),
+    ("eta", "VARCHAR"),
+    ("imoNumber", "INTEGER"),
+    ("callSign", "VARCHAR"),
+]
+SILVER_VOYAGE_COLUMNS = [
+    ("destination", "VARCHAR"),
+    ("eta", "VARCHAR"),
+    ("imo_number", "INTEGER"),
+    ("call_sign", "VARCHAR"),
+]
+
+
+def _add_columns(conn, table: str, columns: list[tuple[str, str]]) -> None:
+    """Add any missing columns to a table that already exists.
+
+    CREATE TABLE IF NOT EXISTS leaves an existing table as it was, so a column
+    added to the code would never reach the warehouse without this.
+    """
+    exists = conn.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [table]
+    ).fetchone()[0]
+    if not exists:
+        return
+    for name, sql_type in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {sql_type}")
+
+
 # ---------------------------------------------------------------------------
 # Bronze
 # ---------------------------------------------------------------------------
@@ -81,10 +113,15 @@ def initialize_bronze_table(db_path: Path | str = DB_PATH) -> None:
             navigationalStatus INTEGER,
             stream VARCHAR,
             msgtime TIMESTAMP,
-            received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            destination VARCHAR,
+            eta VARCHAR,
+            imoNumber INTEGER,
+            callSign VARCHAR
         )
     """
     )
+    _add_columns(conn, "ais_messages_bronze", VOYAGE_COLUMNS)
     conn.close()
     print(f"✅ Warehouse initialized: {db_path}")
 
@@ -129,48 +166,15 @@ def insert_ais_messages(messages: list[dict], db_path: Path | str = DB_PATH) -> 
         return 0
 
     received_at = datetime.now()
-
     rows = [
-        [
-            message.get("mmsi"),
-            message.get("name"),
-            message.get("latitude"),
-            message.get("longitude"),
-            message.get("speedOverGround"),
-            message.get("courseOverGround"),
-            message.get("trueHeading"),
-            message.get("rateOfTurn"),
-            message.get("shipType"),
-            message.get("navigationalStatus"),
-            message.get("stream"),
-            message.get("msgtime"),
-            received_at,
-        ]
+        [*(message.get(column) for column in BRONZE_COLUMNS[:-1]), received_at]
         for message in messages
     ]
 
     conn = connect(db_path)
     try:
-        _bulk_insert(
-            conn,
-            "ais_messages_bronze",
-            [
-                "mmsi",
-                "name",
-                "latitude",
-                "longitude",
-                "speedOverGround",
-                "courseOverGround",
-                "trueHeading",
-                "rateOfTurn",
-                "shipType",
-                "navigationalStatus",
-                "stream",
-                "msgtime",
-                "received_at",
-            ],
-            rows,
-        )
+        _add_columns(conn, "ais_messages_bronze", VOYAGE_COLUMNS)
+        _bulk_insert(conn, "ais_messages_bronze", BRONZE_COLUMNS, rows)
     finally:
         conn.close()
 
@@ -190,6 +194,10 @@ BRONZE_COLUMNS = [
     "navigationalStatus",
     "stream",
     "msgtime",
+    "destination",
+    "eta",
+    "imoNumber",
+    "callSign",
     "received_at",
 ]
 
@@ -235,6 +243,10 @@ def insert_ais_snapshots(
                     navigationalStatus INTEGER,
                     stream VARCHAR,
                     msgtime TIMESTAMP,
+                    destination VARCHAR,
+                    eta VARCHAR,
+                    imoNumber INTEGER,
+                    callSign VARCHAR,
                     received_at TIMESTAMP
                 )
                 """
@@ -246,6 +258,7 @@ def insert_ais_snapshots(
 
         conn = connect(db_path)
         try:
+            _add_columns(conn, "ais_messages_bronze", VOYAGE_COLUMNS)
             conn.execute(
                 f"INSERT INTO ais_messages_bronze ({column_list}) "
                 f"SELECT {column_list} FROM read_parquet('{staged}')"
@@ -284,7 +297,11 @@ def initialize_silver_tables(db_path: Path | str = DB_PATH) -> None:
             navigationalStatus  AS navigational_status,
             stream,
             msgtime             AS message_time,
-            received_at
+            received_at,
+            destination,
+            eta,
+            imoNumber           AS imo_number,
+            callSign            AS call_sign
         FROM ais_messages_bronze
         WHERE FALSE
         """
@@ -297,6 +314,8 @@ def initialize_silver_tables(db_path: Path | str = DB_PATH) -> None:
         WHERE FALSE
         """
     )
+    _add_columns(conn, "ais_messages_silver", SILVER_VOYAGE_COLUMNS)
+    _add_columns(conn, "ais_messages_quarantine", VOYAGE_COLUMNS)
     conn.close()
 
 
