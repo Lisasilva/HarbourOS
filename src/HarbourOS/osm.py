@@ -49,6 +49,8 @@ OVERPASS_URLS = (
 )
 # overpass-api.de turns away requests that don't say who is asking (HTTP 406).
 OVERPASS_HEADERS = {"User-Agent": "HarbourOS (https://github.com/Lisasilva/HarbourOS)"}
+# Each server gets at most 4 minutes, so a busy day costs a run at most about
+# 12 minutes before it carries on with the saved layer.
 
 # OpenStreetMap tags for each layer, as (key, accepted values).
 HARBOUR_TAGS: Tags = (
@@ -89,7 +91,7 @@ def overpass_query(tags: Tags) -> str:
     nodes = "".join(f"node{f}(area.norway);" for f in filters)
     shapes = "".join(f"way{f}(area.norway);relation{f}(area.norway);" for f in filters)
     return (
-        '[out:json][timeout:300];area["ISO3166-1"~"^(NO|SJ)$"]->.norway;'
+        '[out:json][timeout:180];area["ISO3166-1"~"^(NO|SJ)$"]->.norway;'
         f"({nodes})->.points;({shapes})->.shapes;.points out;.shapes out tags bb;"
     )
 
@@ -144,7 +146,7 @@ def fetch_features(tags: Tags) -> list[dict[str, Any]]:
     for url in OVERPASS_URLS:
         try:
             response = requests.post(
-                url, data={"data": overpass_query(tags)}, headers=OVERPASS_HEADERS, timeout=600
+                url, data={"data": overpass_query(tags)}, headers=OVERPASS_HEADERS, timeout=240
             )
             response.raise_for_status()
             features = parse_features(response.json(), tags)
