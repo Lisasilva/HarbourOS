@@ -42,6 +42,8 @@ QUERY = f"""
         p.longitude as port_longitude,
         f.stop_type,
         f.visit_type,
+        f.berth_name,
+        f.anchorage_name,
         f.completeness,
         strftime(f.berth_start, '%Y-%m-%dT%H:%M:%SZ') as berth_start,
         strftime(f.berth_end, '%Y-%m-%dT%H:%M:%SZ') as berth_end,

@@ -171,7 +171,13 @@ const when = (d) => d.toLocaleString("en-GB", {weekday: "short", day: "numeric",
 const weekday = (d) => d.toLocaleDateString("en-GB", {weekday: "short", timeZone: TZ});
 const hourFormat = new Intl.DateTimeFormat("en-GB", {hour: "numeric", hourCycle: "h23", timeZone: TZ});
 const norwayHour = (d) => +hourFormat.format(d);
-const placeName = (d) => d.port_name ?? (d.visit_type === "fish_farm" ? "Fish farm" : "At sea");
+const placeName = (d) =>
+  d.port_name ??
+  (d.visit_type === "fish_farm"
+    ? "Fish farm"
+    : d.visit_type === "anchorage"
+      ? (d.anchorage_name ? `At anchor (${d.anchorage_name})` : "At anchor or waiting")
+      : "At sea");
 const stay = (minutes) => (minutes < 90 ? `${Math.round(minutes)} min` : minutes < 48 * 60 ? `${d3.format(".1f")(minutes / 60)} h` : `${d3.format(".1f")(minutes / 1440)} days`);
 const confidenceBand = (c) => (c >= 0.8 ? "high" : c >= 0.5 ? "medium" : "low");
 const compass = (deg) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];

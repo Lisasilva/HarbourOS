@@ -75,7 +75,8 @@ def test_a_visit_with_no_observed_departure_and_recent_data_is_in_port_now(
     conn = duckdb.connect(str(db_path))
     conn.execute(
         "CREATE TABLE fact_port_call AS "
-        "SELECT *, NULL AS port_locode, 'port_call' AS visit_type, "
+        "SELECT *, NULL AS port_locode, 'port_call' AS visit_type, NULL AS berth_name, "
+        "NULL AS anchorage_name, "
         "NULL AS nearest_port_km, NULL AS stop_latitude, NULL AS stop_longitude "
         "FROM port_call_events"
     )

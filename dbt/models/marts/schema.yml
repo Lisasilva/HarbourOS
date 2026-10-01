@@ -82,16 +82,25 @@ models:
                 field: port_locode
       - name: visit_type
         description: >
-          'fish_farm' when the stop was within 300 m of a fish farm,
+          'fish_farm' when the stop was within 300 m of a fish farm;
           otherwise 'port_call' when a seaport was matched within
-          port_match_km, and 'at_sea' for the rest (rigs, offshore anchorages).
+          port_match_km and the ship was within berth_match_m of an official
+          Kystverket berth; 'anchorage' when it stopped near a port but not
+          at a berth, or near an official anchorage; and 'at_sea' for the
+          rest (rigs, offshore fields).
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ["port_call", "at_sea", "fish_farm"]
+                values: ["port_call", "anchorage", "at_sea", "fish_farm"]
       - name: fish_farm_name
         description: The fish farm's name, for fish_farm stops (may be null if unnamed).
+      - name: berth_name
+        description: The nearest quay, ferry quay, port facility or harbour in Kystverket's register (within about 3 km).
+      - name: berth_m
+        description: Metres from the stop to berth_name.
+      - name: anchorage_name
+        description: The official anchorage within anchorage_m (1,500 m) of the stop, if any.
       - name: arrival_date_key
         tests:
           - not_null
