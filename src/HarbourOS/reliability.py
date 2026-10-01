@@ -336,6 +336,19 @@ def main() -> None:
     conn = connect(DB_PATH)
     try:
         features = refresh_harbour_map(conn, save=save)
+        # ESTIMATE ONLY (throwaway branch): drop stops at fish farms, as the
+        # fish-farm PR's fact_port_call would.
+        farms = osm.refresh_layer(
+            conn, "fish_farms", lambda: osm.fetch_features(osm.FISH_FARM_TAGS), save=False
+        )
+        print(f"Fish farms: {farms}")
+        conn.execute(
+            "CREATE OR REPLACE TEMP VIEW fact_port_call AS SELECT f.* FROM main.fact_port_call f "
+            "WHERE NOT EXISTS (SELECT 1 FROM fish_farms h WHERE "
+            "f.stop_latitude BETWEEN h.min_lat - 0.0027 AND h.max_lat + 0.0027 AND "
+            "f.stop_longitude BETWEEN h.min_lon - 0.0027 / cos(radians(f.stop_latitude)) "
+            "AND h.max_lon + 0.0027 / cos(radians(f.stop_latitude)))"
+        )
         print(f"Harbour map: {features} quays, piers, harbours and terminals")
         summary = run_check(conn, args.size, seed, args.hours, save, features)
         if summary is None:
