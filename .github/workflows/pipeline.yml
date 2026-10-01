@@ -141,11 +141,28 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 
+      # The dashboard's libraries (d3, maplibre, ...) are downloaded from npm
+      # during the build. Keeping them between runs means a hiccup at npm can't
+      # stop the site from updating (run #106 failed on exactly that). Only
+      # the libraries are kept, never the data.
+      - name: Keep the dashboard's libraries between runs
+        uses: actions/cache@v6
+        with:
+          path: dashboard/src/.observablehq/cache/_npm
+          key: dashboard-npm-${{ hashFiles('dashboard/src/**/*.md', 'dashboard/package-lock.json') }}
+          restore-keys: dashboard-npm-
+
       - name: Build the dashboard
         working-directory: dashboard
         run: |
           npm ci
-          npm run build
+          # Try up to three times in case npm is briefly unreachable.
+          for attempt in 1 2 3; do
+            npm run build && exit 0
+            echo "Build attempt $attempt failed; retrying in 30 seconds."
+            sleep 30
+          done
+          exit 1
 
       - name: Deploy the dashboard to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
