@@ -15,7 +15,17 @@ that began in the last six hours of data and asks two things of each:
    must lie within 300 m of the stop's centre. This uses positions only, not
    the speed or the crew-typed status the stop was detected from.
 
-A stop that passes both is "confirmed". A stop with fewer than two positions
+A second, separate witness is the official record. Larger ships report each
+voyage to the authorities (SafeSeaNet), and Kystverket publishes those reports
+in its open Kystdatahuset API (ships of 45 m and longer, without a login). A
+stop also counts as confirmed when the ship reported a voyage to or from a
+place within 2 km of it, with an estimated arrival or departure within 12
+hours of the stop. The places are looked up in Kystverket's location register
+(the kystverket_locations seed). Neither witness is used to detect port calls:
+the pipeline decides "at a berth" from Kystverket's register, not from
+OpenStreetMap, and never reads the voyage reports.
+
+A stop that passes is "confirmed". A stop with fewer than two positions
 during the stop is "too little data". The headline on the website counts it as
 not confirmed, so the figure can only err on the cautious side. OpenStreetMap
 leaves out some quays, so a real port call can fail check 1. The reverse, a
@@ -36,11 +46,13 @@ import argparse
 import json
 import random
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import duckdb
+import requests
 
 from HarbourOS import osm
 from HarbourOS.storage import DB_PATH, connect
@@ -51,6 +63,11 @@ NEAR_M = 300
 STILL_M = 300
 STILL_SHARE = 0.9
 VERDICTS = ("confirmed", "not_at_harbour", "moved", "too_little_data")
+VOYAGES_URL = "https://kystdatahuset.no/ws/api/voyage/for-ships/by-mmsi"
+OFFICIAL_M = 2000
+OFFICIAL_HOURS = 12
+
+Voyages = Callable[[list[int], datetime, datetime], list[dict[str, Any]]]
 
 CHECK_COLUMNS = {
     "checked_at": "TIMESTAMP",
@@ -61,6 +78,7 @@ CHECK_COLUMNS = {
     "checked": "INTEGER",
     **{v: "INTEGER" for v in VERDICTS},
     "harbour_features": "INTEGER",
+    "official_voyages": "INTEGER",
 }
 STOP_COLUMNS = {
     "checked_at": "TIMESTAMP",
@@ -75,6 +93,7 @@ STOP_COLUMNS = {
     "still_fixes": "INTEGER",
     "harbour_kind": "VARCHAR",
     "harbour_name": "VARCHAR",
+    "official_place": "VARCHAR",
     "verdict": "VARCHAR",
 }
 
@@ -152,7 +171,95 @@ EVIDENCE = """
 """
 
 
-def verdict(fixes: int, still_fixes: int, harbour_kind: str | None) -> str:
+def fetch_voyages(mmsis: list[int], start: datetime, end: datetime) -> list[dict[str, Any]]:
+    """The voyages these ships reported between start and end (UTC)."""
+    response = requests.post(
+        VOYAGES_URL,
+        json={
+            "mmsiIds": mmsis,
+            "startTime": start.isoformat(timespec="seconds"),
+            "endTime": end.isoformat(timespec="seconds"),
+        },
+        headers=osm.OVERPASS_HEADERS,
+        timeout=120,
+    )
+    response.raise_for_status()
+    return response.json().get("data") or []
+
+
+def _utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    moment = datetime.fromisoformat(value)
+    return moment.astimezone(UTC).replace(tzinfo=None) if moment.tzinfo else moment
+
+
+def voyage_ends(voyages: list[dict[str, Any]]) -> list[tuple[int, str, datetime]]:
+    """Each reported departure and arrival as (mmsi, place, estimated time)."""
+    ends = []
+    for v in voyages:
+        departure = (v.get("origin"), v.get("etd"))
+        arrival = (v.get("destination"), v.get("eta"))
+        for place, moment in (departure, arrival):
+            when = _utc(moment)
+            if v.get("mmsi") and place and when:
+                ends.append((int(v["mmsi"]), " ".join(place.split()), when))
+    return ends
+
+
+OFFICIAL = """
+    SELECT c.port_call_key, min(e.place) AS place
+    FROM checked c
+    JOIN voyage_ends e
+      ON e.mmsi = c.mmsi
+     AND e.reported_at BETWEEN c.berth_start - to_hours(CAST($hours AS BIGINT))
+                  AND c.berth_end + to_hours(CAST($hours AS BIGINT))
+    JOIN kystverket_locations k ON lower(k.location_name) = lower(e.place)
+    WHERE 6371000 * 2 * asin(sqrt(
+        pow(sin(radians(k.latitude - c.lat) / 2), 2)
+        + cos(radians(c.lat)) * cos(radians(k.latitude))
+        * pow(sin(radians(k.longitude - c.lon) / 2), 2)
+    )) <= $official_m
+    GROUP BY c.port_call_key
+"""
+
+
+def official_records(
+    conn: duckdb.DuckDBPyConnection,
+    chosen: list[tuple],
+    voyages: Voyages | None,
+) -> tuple[dict[str, str], int | None]:
+    """Which checked stops the ships' own voyage reports confirm.
+
+    Returns {port_call_key: reported place} and how many voyages came back
+    (None when the reports or the location register were unavailable).
+    """
+    if voyages is None or not _has_table(conn, "kystverket_locations"):
+        return {}, None
+    mmsis = sorted({row[1] for row in chosen})
+    start = min(row[3] for row in chosen) - timedelta(hours=OFFICIAL_HOURS)
+    end = max(row[4] for row in chosen) + timedelta(hours=OFFICIAL_HOURS)
+    try:
+        reported = voyages(mmsis, start, end)
+    except (requests.RequestException, ValueError) as error:
+        print(f"Official voyage reports unavailable: {error}")
+        return {}, None
+    conn.execute(
+        "CREATE OR REPLACE TEMP TABLE voyage_ends "
+        "(mmsi INTEGER, place VARCHAR, reported_at TIMESTAMP)"
+    )
+    ends = voyage_ends(reported)
+    if ends:
+        conn.executemany("INSERT INTO voyage_ends VALUES (?, ?, ?)", ends)
+    matches = conn.execute(OFFICIAL, {"hours": OFFICIAL_HOURS, "official_m": OFFICIAL_M}).fetchall()
+    return dict(matches), len(reported)
+
+
+def verdict(
+    fixes: int, still_fixes: int, harbour_kind: str | None, official_place: str | None = None
+) -> str:
+    if official_place is not None:
+        return "confirmed"
     if fixes < 2:
         return "too_little_data"
     if harbour_kind is None:
@@ -169,6 +276,7 @@ def run_check(
     hours: int = WINDOW_HOURS,
     save: bool = True,
     harbour_features: int = 0,
+    voyages: Voyages | None = fetch_voyages,
 ) -> dict[str, Any] | None:
     """Check `size` random recent port calls and record the results.
 
@@ -194,6 +302,8 @@ def run_check(
         ).fetchall()
     }
 
+    official, official_voyages = official_records(conn, chosen, voyages)
+
     checked_at = osm.now()
     stops = []
     for key, mmsi, locode, berth_start, berth_end, lat, lon, _ in chosen:
@@ -212,7 +322,8 @@ def run_check(
                 "still_fixes": still,
                 "harbour_kind": kind,
                 "harbour_name": name,
-                "verdict": verdict(fixes, still, kind),
+                "official_place": official.get(key),
+                "verdict": verdict(fixes, still, kind, official.get(key)),
             }
         )
     counts = {v: sum(1 for s in stops if s["verdict"] == v) for v in VERDICTS}
@@ -225,6 +336,7 @@ def run_check(
         "checked": len(stops),
         **counts,
         "harbour_features": harbour_features,
+        "official_voyages": official_voyages,
     }
     _record(conn, summary, stops, save)
     return summary
@@ -240,6 +352,13 @@ def _record(
     conn.execute(
         f"CREATE {temp}TABLE IF NOT EXISTS reliability_check_stops ({osm.schema(STOP_COLUMNS)})"
     )
+    # Tables saved by an older version of this check lack the newer columns.
+    for table, columns in (
+        ("reliability_checks", CHECK_COLUMNS),
+        ("reliability_check_stops", STOP_COLUMNS),
+    ):
+        for name, kind in columns.items():
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {kind}")
     osm.load_rows(
         conn,
         "INSERT INTO reliability_checks BY NAME SELECT * FROM {rows}",
@@ -345,7 +464,8 @@ def main() -> None:
                 f"Checked {summary['checked']} of {summary['candidates']} recent port calls "
                 f"(seed {seed}): {summary['confirmed']} confirmed, "
                 f"{summary['not_at_harbour']} not near a mapped quay, {summary['moved']} moved, "
-                f"{summary['too_little_data']} too little data."
+                f"{summary['too_little_data']} too little data. "
+                f"Official voyage reports: {summary['official_voyages']}."
             )
         if args.json:
             args.json.write_text(json.dumps(dashboard_summary(conn)))

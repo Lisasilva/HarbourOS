@@ -1,63 +1,54 @@
-"""Throwaway probe (not for merging): if only stops near an official Kystverket
-berth counted as port calls, how many would OpenStreetMap confirm?"""
+"""Throwaway probe (not for merging): the new rules' expected score."""
 
-import requests
+import csv
+from pathlib import Path
 
 from HarbourOS.reliability import refresh_harbour_map, run_check
 from HarbourOS.storage import DB_PATH, connect
 
-BASE = "https://kystdatahuset.no/ws/api"
-BERTHS = ("QUAY", "FERRY_QUAY", "PORT_FACILITY", "HARBOUR")
-
-rows = []
-for f in requests.get(f"{BASE}/location/norway/all/geojson", timeout=120).json()["features"]:
-    p = f["properties"]
-    lon, lat = f["geometry"]["coordinates"]
-    rows.append((p["systemname"], p["locationnamenor"], lat, lon))
-
 conn = connect(DB_PATH)
-conn.execute("CREATE TEMP TABLE kv (kind VARCHAR, name VARCHAR, lat DOUBLE, lon DOUBLE)")
-conn.executemany("INSERT INTO kv VALUES (?, ?, ?, ?)", rows)
+rows = list(csv.DictReader(Path("dbt/seeds/kystverket_locations.csv").open()))
+conn.execute(
+    "CREATE TEMP TABLE kystverket_locations (location_id INTEGER, locode VARCHAR, "
+    "location_name VARCHAR, kind VARCHAR, latitude DOUBLE, longitude DOUBLE)"
+)
+conn.executemany(
+    "INSERT INTO kystverket_locations VALUES (?, ?, ?, ?, ?, ?)",
+    [tuple(r.values()) for r in rows],
+)
 print("OSM features:", refresh_harbour_map(conn, save=False))
-for hours in (6, 24):
-    conn.execute("DROP TABLE IF EXISTS reliability_check_stops")
-    conn.execute("DROP TABLE IF EXISTS reliability_checks")
-    print(hours, "h:", run_check(conn, size=100000, seed=1, hours=hours, save=False))
-    HAV = """6371000 * 2 * asin(sqrt(pow(sin(radians(k.lat - s.stop_latitude) / 2), 2)
-        + cos(radians(s.stop_latitude)) * cos(radians(k.lat))
-        * pow(sin(radians(k.lon - s.stop_longitude) / 2), 2)))"""
-    conn.execute(
-        f"""
-        CREATE OR REPLACE TEMP TABLE j AS
-        SELECT s.port_call_key, s.verdict,
-            min(CASE WHEN k.kind IN {BERTHS} THEN {HAV} END) AS berth_m,
-            min(CASE WHEN k.kind = 'ANCHORAGE' THEN {HAV} END) AS anchorage_m
-        FROM reliability_check_stops s LEFT JOIN kv k
-          ON k.lat BETWEEN s.stop_latitude - 0.05 AND s.stop_latitude + 0.05
-         AND k.lon BETWEEN s.stop_longitude - 0.1 AND s.stop_longitude + 0.1
-        GROUP BY ALL
+print(run_check(conn, size=100000, seed=1, hours=24, save=False))
+conn.execute(
+    """
+    CREATE TEMP TABLE j AS
+    SELECT s.port_call_key, s.verdict, s.harbour_kind, s.official_place, s.fixes, s.still_fixes,
+      min(6371000 * 2 * asin(sqrt(pow(sin(radians(k.latitude - s.stop_latitude) / 2), 2)
+        + cos(radians(s.stop_latitude)) * cos(radians(k.latitude))
+        * pow(sin(radians(k.longitude - s.stop_longitude) / 2), 2))))
+        FILTER (WHERE k.kind IN ('quay', 'ferry_quay', 'port_facility', 'harbour')) AS berth_m,
+      min(6371000 * 2 * asin(sqrt(pow(sin(radians(k.latitude - s.stop_latitude) / 2), 2)
+        + cos(radians(s.stop_latitude)) * cos(radians(k.latitude))
+        * pow(sin(radians(k.longitude - s.stop_longitude) / 2), 2))))
+        FILTER (WHERE k.kind = 'anchorage') AS anch_m
+    FROM reliability_check_stops s LEFT JOIN kystverket_locations k
+      ON k.latitude BETWEEN s.stop_latitude - 0.03 AND s.stop_latitude + 0.03
+     AND k.longitude BETWEEN s.stop_longitude - 0.06 AND s.stop_longitude + 0.06
+    GROUP BY ALL
+    """
+)
+print(
+    conn.sql(
+        """
+        SELECT berth_m <= 500 AND coalesce(anch_m, 1e9) > 1500 AS new_port_call, count(*) n,
+          round(avg((verdict = 'confirmed')::int), 3) confirmed,
+          round(avg((official_place IS NOT NULL)::int), 3) official,
+          round(avg((harbour_kind IS NOT NULL)::int), 3) on_osm,
+          round(avg((verdict = 'moved')::int), 3) moved,
+          round(avg((verdict = 'not_at_harbour')::int), 3) not_at_harbour
+        FROM j GROUP BY 1
         """
     )
-    print(
-        conn.sql(
-            """
-            SELECT t.m AS berth_within_m, count(*) FILTER (WHERE berth_m <= t.m) AS kept,
-              round(avg((verdict = 'confirmed')::int) FILTER (WHERE berth_m <= t.m), 3) AS confirmed,
-              round(avg((verdict = 'moved')::int) FILTER (WHERE berth_m <= t.m), 3) AS moved,
-              round(avg((verdict = 'confirmed')::int)
-                FILTER (WHERE berth_m > t.m OR berth_m IS NULL), 3) AS confirmed_dropped,
-              count(*) AS total
-            FROM j, (VALUES (200), (300), (500), (750), (1000), (1500), (2000)) t(m)
-            GROUP BY t.m ORDER BY t.m
-            """
-        )
-    )
-    print(
-        conn.sql(
-            """
-            SELECT verdict, count(*) n, round(quantile_cont(berth_m, 0.5)) p50,
-                   round(avg((anchorage_m <= 2000)::int), 3) near_anchorage
-            FROM j GROUP BY 1
-            """
-        )
-    )
+)
+print(conn.sql("SELECT official_place, count(*) FROM j WHERE official_place IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10"))
+print(conn.sql("SELECT place, count(*) n FROM voyage_ends GROUP BY 1 ORDER BY 2 DESC LIMIT 15"))
+print(conn.sql("SELECT count(*) ends, count(DISTINCT mmsi) ships, count(*) FILTER (WHERE lower(place) IN (SELECT lower(location_name) FROM kystverket_locations)) named FROM voyage_ends"))

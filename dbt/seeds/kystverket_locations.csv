@@ -220,7 +220,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2328181,NOHJO,Hjørungavåg,harbour,62.35416,6.08277
 2328182,NOHOA,Holla,harbour,63.31956,9.14506
 2328183,NOHOK,Hommelvik,harbour,63.41468,10.78255
-2328186,NOZKR,Kråkvågfjorden  Losbordingspunkt,pilot_boarding,63.65,9.248332
+2328186,NOZKR,Kråkvågfjorden Losbordingspunkt,pilot_boarding,63.65,9.248332
 2328188,NOZTR,Trondheim ankring,anchorage,63.475,10.4545
 2328189,NOKSU,Kristiansund,harbour,63.11531,7.73641
 2328190,NOKYR,Kyrksæterøra,harbour,63.29071,9.09168
@@ -573,7 +573,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2447731,NOZBE,Belgen ankring,anchorage,59.125225,10.980148
 2447734,NOZBT,Båtsfjord Losbordingspunkt,pilot_boarding,70.65833,29.816668
 2447744,NOZFB,Fensfjorden,location_at_sea,60.832645,4.98197
-2447752,NOZDA,Dalasundet ankring,location_at_sea,63.12189,7.76641
+2447752,NOZDA,Dalasundet ankring,anchorage,63.12189,7.76641
 2447754,NOUND,Sund - Karmøy,harbour,59.29871,5.23
 2447757,NOVDL,Vistdal,harbour,62.72306,7.93071
 2447758,NOOTB,Ottersbogen,harbour,63.70825,9.79027
@@ -1342,7 +1342,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2456807,NOSRP,Tømmervik skysbåtkai,quay,59.7497,5.432835
 2456823,NO888,Ånnelandssundet,location_at_sea,60.88922,4.96561
 2456824,NO888,Bognestraumen,location_at_sea,60.61218,5.07942
-2456827,NOBYN,Bygnes Anchorage (A5-0612),quay,59.3,5.31666
+2456827,NOBYN,Bygnes Anchorage (A5-0612),anchorage,59.3,5.31666
 2456829,NOTSD,NORBAR,quay,59.400166,5.263401
 2456875,NOSKU,Fergekai 2 (5-0812),quay,59.146633,5.266513
 2456878,NOBOK,Føresvik (6-0111),quay,59.23214,5.44063
@@ -2101,7 +2101,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2460640,NOTYF,Drag industrikai,quay,68.04733,16.077168
 2460641,NOULS,Kleven Verft,quay,62.323666,5.844167
 2460642,NOULS,Myklebust Verft,quay,62.221333,5.642667
-2460643,NOULS,Kongsberg Maritime  Propulsion Ulsteinvik,quay,62.342167,5.836
+2460643,NOULS,Kongsberg Maritime Propulsion Ulsteinvik,quay,62.342167,5.836
 2460644,NOULS,Ulstein Verft,quay,62.3395,5.824667
 2460645,NOVDS,Vadsø Havneanlegg,quay,70.07083,29.737667
 2460647,NOVEY,Værøy Fryseterminal,quay,67.65783,12.701167
@@ -2194,7 +2194,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2460742,,DSK 5 (5-0715),quay,59.283672,5.314919
 2460743,,DSK 6 (5-0716),quay,59.2837,5.314147
 2460744,,Norscrap port 35,quay,60.440777,5.103723
-2460745,,Bøvågen - anchorage,quay,59.36032,5.29692
+2460745,,Bøvågen - anchorage,anchorage,59.36032,5.29692
 2460747,,Krana dypvannskai,port_facility,58.727634,9.228122
 2460748,,Ila Pir quay 26,quay,63.43226,10.372668
 2460749,,Ila Pir quay 28,quay,63.432854,10.366917
@@ -2394,7 +2394,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2461085,,Fugleskjærskaia Quay D,quay,61.601852,5.025611
 2461089,,Fiskerikaia havneanlegg,port_facility,69.69023,19.015793
 2461090,,Floating Pier South Jetty,quay,69.64444,18.95601
-2461092,NOZHZ,Høyevarde -  Karmsundet ankring,anchorage,59.329685,5.307427
+2461092,NOZHZ,Høyevarde - Karmsundet ankring,anchorage,59.329685,5.307427
 2461094,,Quay 1 South (NON ISPS),quay,69.64461,18.953157
 2461095,,Quay 1 (NON ISPS),quay,69.64571,18.954165
 2461096,,Quay 2 (NON ISPS),quay,69.64624,18.955423
@@ -2421,7 +2421,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2461136,NO888,Seihaug - grunnen ankring,anchorage,69.808334,19.558332
 2461139,,Veidekke industrier kai 2,quay,63.09053,7.770985
 2461142,,Rekefjord Stone kai 1,quay,58.327744,6.260675
-2461143,,Rekefjord Stone  kai 2,quay,58.32863,6.261448
+2461143,,Rekefjord Stone kai 2,quay,58.32863,6.261448
 2461144,,Rekefjordstone kai 3,quay,58.33,6.257667
 2461153,,Eksportkaia,quay,69.72423,30.022646
 2461154,,Trekaia (Tug Boat Quay NON ISPS),quay,69.72685,30.030148
@@ -2439,8 +2439,8 @@ location_id,locode,location_name,kind,latitude,longitude
 2461184,,Eksport Quay,quay,61.233196,7.710524
 2461186,,Hovlandterminalen,port_facility,58.43762,5.978704
 2461215,,"Industrikaien, Kai 2",quay,58.083435,6.792219
-2461216,,Cruise Anchor,quay,58.092304,6.817003
-2461227,,Nordfjordeid  Cruisehavn,port_facility,61.90473,5.98676
+2461216,,Cruise Anchor,anchorage,58.092304,6.817003
+2461227,,Nordfjordeid Cruisehavn,port_facility,61.90473,5.98676
 2461232,,Quay 4B,quay,60.861256,5.031345
 2461535,SJZRI,Rijpfjorden,location_at_sea,80.293335,22.323334
 2461545,NORSE,Rosendal Cruisehavn,quay,59.986828,6.002788
@@ -2494,7 +2494,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2461664,NOZNF,Hemnskjela ankring,anchorage,63.486,9.093167
 2461666,,Stilnestangen Havneanlegg,port_facility,58.875866,9.418584
 2461669,NORVK,Sinkaberg-hansen Slakteri,quay,64.854195,11.244135
-2461673,NOELN,Omya Hustadmarmor AS  Quay1,quay,62.848164,7.111928
+2461673,NOELN,Omya Hustadmarmor AS Quay1,quay,62.848164,7.111928
 2461674,NOKAT,Kattfjord,location_at_sea,69.63333,18.391666
 2461675,NOVKK,Vikkilen ancorage area,quay,58.333332,8.6
 2461677,NOSLX,Bremnes kai,quay,68.85402,15.388736
@@ -2572,13 +2572,13 @@ location_id,locode,location_name,kind,latitude,longitude
 2462564,NO888,Skjellanger,anchorage,60.591167,4.9662
 2462572,NOAUL,Aurland Ferjekai,quay,60.911724,7.188176
 2462573,NOAUL,Aurland kjølekai,quay,60.906036,7.184319
-2462574,NOFLA,Flåm Anchorage,quay,60.867428,7.132375
+2462574,NOFLA,Flåm Anchorage,anchorage,60.867428,7.132375
 2462575,NOFLA,Flåm rutebåtkaier,quay,60.861958,7.114583
 2462576,NOGUD,Gudvangen Ferjekai,quay,60.88136,6.841363
 2462577,NOGUD,Gudvangen - Butikk-kai,quay,60.87998,6.844635
 2462578,NOFLA,Flåm Yacht-flytekai,quay,60.86128,7.119561
-2462579,NOSAU,"Sauda sentrum / ""Skipsekspedisjonen""",quay,59.6467,6.349733
-2462584,NOKRS,Berth 0 NOZKS (Anchor),quay,58.13333,7.986111
+2462579,NOSAU,Sauda sentrum / 'Skipsekspedisjonen',quay,59.6467,6.349733
+2462584,NOKRS,Berth 0 NOZKS (Anchor),anchorage,58.13333,7.986111
 2462596,NOKJK,Nordkraft Magasin kai Sørfjorden,quay,68.06451,16.659595
 2462597,NOMAY,ICT Syd,quay,61.938263,5.120076
 2462598,,Botnastranda Aust,port_facility,61.61204,5.110579
@@ -3196,7 +3196,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2465915,NOBVK,Tangen RoRo Syd/RRS,quay,59.06535,9.700764
 2465924,NOZFX,Fanafjorden ankring,anchorage,60.233383,5.272283
 2465937,NOSOS,Svolvær Vest,quay,68.23242,14.53873
-2465938,NOSVJ,Anchoring Svolvær Harbour (Tender),quay,68.224724,14.575833
+2465938,NOSVJ,Anchoring Svolvær Harbour (Tender),anchorage,68.224724,14.575833
 2465940,NOSKN,Stokmarknes Miljøhavn,quay,68.571655,14.974314
 2466186,NOAES,Flatholmen 3 - Tyrholm & Farstad - NOAES-0009,quay,62.466667,6.183333
 2466187,NOAES,Flatholmen 2 - Tyrholm & Farstad - NOAES-0009,quay,62.466667,6.183333
@@ -3220,7 +3220,7 @@ location_id,locode,location_name,kind,latitude,longitude
 2466249,NOEGE,HYMEK Quay - Ocean Star,quay,58.439007,5.989628
 2466254,NOVAO,Dampskipskaia south,quay,70.37435,31.104668
 2466255,NOVAO,Dampskipskaia North,quay,70.37529,31.104324
-2466256,NOBOG,"""Nato-kaia""",quay,68.51835,16.962675
+2466256,NOBOG,'Nato-kaia',quay,68.51835,16.962675
 2466257,NOGIK,Gismarvik - Kai Nord,quay,59.32603,5.38876
 2466259,NOHRD,Seaworks Havn (Langnes),quay,68.78479,16.547642
 2466293,NOFDE,Engebø Rutile and Garnet kai,quay,61.488,5.442917
