@@ -262,7 +262,7 @@ HarbourOS/
 | Endpoint used | `https://live.ais.barentswatch.no/v1/latest/combined`: each ship's latest message, as JSON, for the Norwegian area |
 | Auth | OAuth2 client credentials at `https://id.barentswatch.no/connect/token`, scope `ais` |
 | Type | Semi-structured JSON, one object per ship: `mmsi`, `name`, `latitude`, `longitude`, `speedOverGround`, `courseOverGround`, `trueHeading`, `rateOfTurn`, `shipType`, `navigationalStatus`, `stream`, `msgtime` (the columns kept in Bronze) |
-| Other fields in the feed | The API likely also returns destination, ETA, IMO and call sign (per its documentation, **not yet confirmed** against our data). They are **not stored** |
+| Voyage fields | `destination`, `eta`, `imoNumber`, `callSign`: typed in by crews, stored raw in Bronze and carried to Silver (`destination`, `eta`, `imo_number`, `call_sign`) from 2026-10-01. Each collect step logs how many messages carried each field. Nothing uses them yet; they feed the destination-resolution plan (§9) |
 | Ships per poll | ~4,142–4,147 (pipeline run #94, 2026-09-29/30). The ingestion docstring records 4,014 at an earlier date |
 | New messages per poll | ~3,400 after removing repeats (run #94: 3,393–3,449 for polls 2–33) |
 | Messages per run | 113,147 stored from 33 polls (run #94) |
@@ -866,7 +866,7 @@ on a manual full-refresh run (bumped from the queue).
 ### Not implemented
 
 - Any AI or machine-learning component (§9).
-- Collection of destination, ETA, IMO number and call sign.
+- Using the collected destination, ETA, IMO number and call sign (stored from 2026-10-01, not yet used).
 - True streaming.
 - A retention or archiving policy.
 - Filters for positions outside Norwegian waters, `0,0` fixes or teleporting
