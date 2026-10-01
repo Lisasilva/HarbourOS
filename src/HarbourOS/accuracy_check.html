@@ -47,7 +47,7 @@
 <body>
 <header>
   <h1>HarbourOS accuracy check</h1>
-  <p>For each port call, look at the ship's GPS track around the stop. Did the ship really stop at the named port, at about the times shown? Answers save in this browser as you go; download them when done. Sample seed __SEED__.</p>
+  <p>For each visit: find the red dots (where the ship sat still), open the stop on a real map if you need to, and check it is a harbour or quay near the named port. Then press Correct, Wrong or Can't tell. Answers save in this browser as you go; download them when done. Sample seed __SEED__.</p>
 </header>
 <main>
   <div class="bar">
@@ -65,6 +65,7 @@
         <h2 id="ship"></h2>
         <p class="sub" id="shiptype"></p>
         <dl id="facts"></dl>
+        <p style="margin:0 0 12px"><a id="realmap" target="_blank" rel="noopener">Open the stop on a real map &#8599;</a></p>
         <div class="q">Did it really stop at this port, at about these times?</div>
         <div class="choices">
           <button data-a="correct">Correct (key 1)</button>
@@ -79,7 +80,7 @@
       <span><span class="dot" style="background:#8a2c31"></span>Stopped (under 0.5 knots)</span>
       <span><span class="dot" style="background:#617891"></span>Moving</span>
       <span><span class="dot" style="background:#d5b893;border:2px solid #25344f"></span>Matched port</span>
-      <span>Thicker line: the stop the pipeline found</span>
+      <span>Thicker line: the stop the pipeline found</span><span>Dashed rings: 1 km and 2 km from the port</span>
     </div>
   </div>
 </main>
@@ -121,10 +122,22 @@ function show() {
     ["Confidence", v.confidence],
     ["Track points", v.track.length],
   ];
+  const stopPts = v.track.filter((p) => p[3] >= v.berth_start && p[3] <= v.berth_end);
+  const at = stopPts[0] || v.track[0];
+  const link = el("realmap");
+  if (at) { link.href = `https://www.openstreetmap.org/?mlat=${at[0]}&mlon=${at[1]}#map=16/${at[0]}/${at[1]}`; link.style.display = ""; }
+  else link.style.display = "none";
   el("facts").innerHTML = rows.map(([k, val]) => `<dt>${k}</dt><dd>${esc(val)}</dd>`).join("");
 
   layer.clearLayers();
   const pts = v.track.map((p) => [p[0], p[1]]);
+  const bounds = pts.slice();
+  if (v.port_lat != null) {
+    L.circleMarker([v.port_lat, v.port_lon], { radius: 9, color: "#25344f", weight: 2, fillColor: "#d5b893", fillOpacity: 1 })
+      .bindTooltip(esc(v.port || v.locode), { permanent: true, direction: "top", offset: [0, -10] }).addTo(layer);
+    bounds.push([v.port_lat, v.port_lon]);
+    [1000, 2000].forEach((r) => L.circle([v.port_lat, v.port_lon], { radius: r, color: "#25344f", weight: 1, dashArray: "4 4", fill: false, interactive: false }).addTo(layer));
+  }
   if (pts.length) L.polyline(pts, { color: "#617891", weight: 2, opacity: 0.8 }).addTo(layer);
   const inStop = v.track.filter((p) => p[3] >= v.berth_start && p[3] <= v.berth_end).map((p) => [p[0], p[1]]);
   if (inStop.length) L.polyline(inStop, { color: "#25344f", weight: 6, opacity: 0.6 }).addTo(layer);
@@ -134,12 +147,6 @@ function show() {
       fillColor: p[2] != null && p[2] < 0.5 ? "#8a2c31" : "#617891"
     }).bindTooltip(`${p[3]} · ${p[2] == null ? "?" : p[2]} kn`).addTo(layer);
   });
-  const bounds = pts.slice();
-  if (v.port_lat != null) {
-    L.circleMarker([v.port_lat, v.port_lon], { radius: 9, color: "#25344f", weight: 2, fillColor: "#d5b893", fillOpacity: 1 })
-      .bindTooltip(esc(v.port || v.locode), { permanent: true, direction: "right" }).addTo(layer);
-    bounds.push([v.port_lat, v.port_lon]);
-  }
   if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
   else map.setView([62, 8], 5);
 
