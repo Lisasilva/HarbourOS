@@ -16,7 +16,14 @@ conn.executemany(
     "INSERT INTO kystverket_locations VALUES (?, ?, ?, ?, ?, ?)",
     [tuple(r.values()) for r in rows],
 )
-print("OSM features:", refresh_harbour_map(conn, save=False))
+import time
+for attempt in range(4):
+    try:
+        print("OSM features:", refresh_harbour_map(conn, save=False))
+        break
+    except RuntimeError as error:
+        print("retrying:", str(error)[:120])
+        time.sleep(60)
 print(run_check(conn, size=100000, seed=1, hours=24, save=False))
 conn.execute(
     """
