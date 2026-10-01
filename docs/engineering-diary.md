@@ -360,6 +360,12 @@ disbelieving an output):
 4. Stops more than 10 km from a port are `at_sea`, not port calls (PR #7).
    Stops within 300 m of a fish farm are `fish_farm` (2026-10-01): the
    reliability check found service boats at farms counted as port calls.
+   A port call must also be within 500 m of an official berth in Kystverket's
+   location register (2026-10-01); other stops near a port, and stops at
+   official anchorages, are `anchorage`. The check had found many "port
+   calls" were ships waiting off the coast. On a day of data, 77% of stops
+   within 500 m of an official berth were also beside a quay on
+   OpenStreetMap, against 20% of the rest.
 5. Svalbard ports added (PR #6).
 6. A neighbouring state only counts as witnessing arrival or departure if it
    joins without a gap (PR #15; this removed 1,566 false "complete" ~38-hour
@@ -453,8 +459,8 @@ degrees).
 
 **`fact_port_call`** (grain: one ship stopping once): `port_call_key` (PK, md5
 of mmsi and berth_start), `mmsi` (FK dim_vessel), `port_locode` (FK dim_port,
-NULL unless a port call), `visit_type` (port_call/at_sea/fish_farm),
-`fish_farm_name`, `nearest_port_km`,
+NULL unless a port call), `visit_type` (port_call/anchorage/at_sea/fish_farm),
+`fish_farm_name`, `berth_name`, `berth_m`, `anchorage_name`, `nearest_port_km`,
 `arrival_date_key` (FK dim_date), `stop_type`, `completeness`, `arrival_time`,
 `berth_start`, `berth_end`, `departure_time`, `minutes_alongside`,
 `n_readings`, `confidence`, `stop_latitude`, `stop_longitude`,
@@ -505,7 +511,7 @@ between facts and dimensions, `accepted_values` on `visit_type`, `stop_type`,
 - `assert_ports_are_in_norway`: every port is inside mainland Norway's or
   Svalbard's bounding box.
 - `assert_visit_type_matches_port_locode`: a `port_call` always has a port and
-  an `at_sea` or `fish_farm` stop never does.
+  an `anchorage`, `at_sea` or `fish_farm` stop never does.
 - `assert_track_has_one_row_per_ship_and_slot`: the track grain holds.
 
 ### Important SQL, explained
@@ -855,7 +861,11 @@ on a manual full-refresh run (bumped from the queue).
   read-only data audit.
 - Automatic reliability check (2026-10-01): every run tests 100 random port
   calls against OpenStreetMap's quays, piers, harbours and ferry terminals,
-  and the site shows how many were confirmed (`reliability.py`).
+  and the site shows how many were confirmed (`reliability.py`). A second
+  witness is the voyages larger ships report to the authorities (SafeSeaNet),
+  read from Kystverket's open Kystdatahuset API: a stop also counts as
+  confirmed when the ship reported a voyage to or from a place within 2 km of
+  it, within 12 hours.
 
 ### Partially completed
 

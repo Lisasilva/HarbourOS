@@ -151,6 +151,13 @@ cd dashboard && npm run deploy
   (2026-10-01) failed when npm didn't answer, so the workflows keep those
   libraries in a GitHub cache (`dashboard/src/.observablehq/cache/_npm`) and
   retry the build up to three times.
+- **Port calls need an official berth.** `dbt/seeds/kystverket_locations.csv`
+  is Kystverket's location register (quays, harbours, anchorages), from
+  `scripts/fetch_kystverket_locations.py`. After refreshing it, start the
+  Pipeline by hand with "full_refresh" ticked. The reliability check must not
+  use it to confirm stops (that would mark its own homework): it uses
+  OpenStreetMap and the ships' official voyage reports from Kystdatahuset
+  (anonymous access covers ships of 45 m and longer).
 - The dashboard builds on Node 24. The workflow actions are on Node-24 majors
   (checkout, setup-python, setup-uv and setup-node @v7, wrangler-action @v4).
 - Python 3.14 is used in CI. dagster-dbt is avoided because it pins an older

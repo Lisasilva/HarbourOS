@@ -54,10 +54,13 @@ Static dashboard on Cloudflare Pages (map, routes, 24-hour replay, charts)
 - **Confidence:** each reading scores 1.0 when speed and the crew's status
   agree, 0.5 when there is no usable status, and 0.3 when they contradict.
   A visit's score is the reading-weighted average.
-- **Honest labels:** stops more than 10 km from any listed seaport (oil rigs,
-  offshore anchorages, fishing grounds) are kept as `at_sea`, and stops at a
-  fish farm (from OpenStreetMap) as `fish_farm`; neither counts as a port
-  call. Visits whose arrival or departure was not seen are labelled so.
+- **Honest labels:** a port call must be within 500 m of a quay, ferry quay,
+  port facility or harbour in Kystverket's official location register (kept
+  in the repo as a dbt seed). Ships stopped near a port but away from any
+  berth, or at an official anchorage, are `anchorage`; stops more than 10 km
+  from any listed seaport (oil rigs, fishing grounds) are `at_sea`; and stops
+  at a fish farm (from OpenStreetMap) are `fish_farm`. None of these counts as
+  a port call. Visits whose arrival or departure was not seen are labelled so.
 - **Incremental everywhere:** each layer only processes new data, so the work
   per run stays flat as history grows.
 
@@ -134,7 +137,8 @@ Production is `.github/workflows/pipeline.yml`. Each run:
    tests) on MotherDuck;
 3. checks 100 random port calls from the run against OpenStreetMap: confirmed
    when the ship sat still within 300 m of a mapped quay, pier, harbour or
-   ferry terminal (`reliability.py`; the map is downloaded at most monthly);
+   ferry terminal, or when the ship's own official voyage report names a place
+   within 2 km (`reliability.py`; the map is downloaded at most monthly);
 4. builds the dashboard (its Python data loaders query Gold) and publishes it
    to Cloudflare Pages, only if every earlier step passed (a failed reliability
    check doesn't block it; the site then shows the previous check);
