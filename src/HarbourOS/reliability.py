@@ -134,7 +134,7 @@ def overpass_query() -> str:
     nodes = "".join(f"node{f}(area.norway);" for f in filters)
     shapes = "".join(f"way{f}(area.norway);relation{f}(area.norway);" for f in filters)
     return (
-        '[out:json][timeout:300];area["ISO3166-1"~"^(NO|SJ)$"]->.norway;'
+        '[out:json][timeout:180];area["ISO3166-1"~"^(NO|SJ)$"]->.norway;'
         f"({nodes})->.points;({shapes})->.shapes;.points out;.shapes out tags bb;"
     )
 
@@ -189,7 +189,7 @@ def fetch_harbour_features() -> list[dict[str, Any]]:
     for url in OVERPASS_URLS:
         try:
             response = requests.post(
-                url, data={"data": overpass_query()}, headers=OVERPASS_HEADERS, timeout=600
+                url, data={"data": overpass_query()}, headers=OVERPASS_HEADERS, timeout=240
             )
             response.raise_for_status()
             features = parse_features(response.json())
