@@ -15,6 +15,9 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      # To push the accuracy-check page to the preview-screenshots branch.
+      contents: write
 
     env:
       HARBOUROS_DB: md:harbouros
@@ -36,3 +39,29 @@ jobs:
 
       - name: Run the data-quality audit
         run: uv run python -m HarbourOS.audit
+
+      # A page for checking 100 random port calls by eye (see
+      # src/HarbourOS/accuracy_sample.py), pushed to the preview-screenshots
+      # branch under accuracy-check/. Only a helper: it never fails the run.
+      - name: Build the accuracy-check page
+        continue-on-error: true
+        env:
+          SHOTS_BRANCH: preview-screenshots
+        run: |
+          uv run python -m HarbourOS.accuracy_sample --size 100 --out "$RUNNER_TEMP/accuracy-check.html"
+          cd "$RUNNER_TEMP"
+          git clone --quiet --depth 1 --branch "$SHOTS_BRANCH" \
+            "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git" repo \
+            || { git init --quiet repo && git -C repo checkout --quiet -b "$SHOTS_BRANCH" \
+                 && git -C repo remote add origin "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git"; }
+          mkdir -p repo/accuracy-check
+          cp accuracy-check.html repo/accuracy-check/index.html
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Accuracy-check sample at ${GITHUB_SHA::7}"
+          for attempt in 1 2 3; do
+            git push --quiet origin "$SHOTS_BRANCH" && break
+            git pull --quiet --rebase origin "$SHOTS_BRANCH"
+          done

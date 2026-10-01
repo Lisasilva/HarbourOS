@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HarbourOS accuracy check</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root { --ink: #25344f; --muted: #617891; --page: #f8f3ea; --card: #fffdf9; --line: #e8dcc6;
+          --tan: #d5b893; --red: #8a2c31; --green: #2f6b4f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 16px; background: var(--ink); color: #fbf6ee; }
+  header h1 { margin: 0 0 4px; font: 600 22px Georgia, serif; }
+  header p { margin: 0; color: #e3d6c1; font-size: 14px; max-width: 60rem; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bar .grow { flex: 1; }
+  .progress { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .progress div { height: 100%; background: var(--ink); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .grid { display: grid; grid-template-columns: 1fr 320px; }
+  #map { height: 520px; }
+  .info { padding: 16px; border-left: 1px solid var(--line); }
+  .info h2 { margin: 0 0 2px; font: 600 19px Georgia, serif; }
+  .info .sub { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+  dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  .q { font-weight: 600; margin: 8px 0; }
+  .choices { display: grid; gap: 8px; }
+  button { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  .choices button.on[data-a="correct"] { background: var(--green); color: #fff; border-color: var(--green); }
+  .choices button.on[data-a="wrong"] { background: var(--red); color: #fff; border-color: var(--red); }
+  .choices button.on[data-a="unsure"] { background: var(--muted); color: #fff; border-color: var(--muted); }
+  textarea { width: 100%; margin-top: 10px; font: inherit; padding: 8px; border: 1px solid var(--line); border-radius: 8px; min-height: 60px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 8px 12px; border-top: 1px solid var(--line); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+  .help { font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  #summary { font-weight: 600; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } #map { height: 380px; } .info { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>HarbourOS accuracy check</h1>
+  <p>For each port call, look at the ship's GPS track around the stop. Did the ship really stop at the named port, at about the times shown? Answers save in this browser as you go; download them when done. Sample seed __SEED__.</p>
+</header>
+<main>
+  <div class="bar">
+    <button id="prev">&larr; Previous</button>
+    <button id="next">Next &rarr;</button>
+    <span class="grow" id="where"></span>
+    <span id="summary"></span>
+    <button class="primary" id="download">Download answers (CSV)</button>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="card">
+    <div class="grid">
+      <div id="map"></div>
+      <div class="info">
+        <h2 id="ship"></h2>
+        <p class="sub" id="shiptype"></p>
+        <dl id="facts"></dl>
+        <div class="q">Did it really stop at this port, at about these times?</div>
+        <div class="choices">
+          <button data-a="correct">Correct (key 1)</button>
+          <button data-a="wrong">Wrong (key 2)</button>
+          <button data-a="unsure">Can't tell (key 3)</button>
+        </div>
+        <textarea id="note" placeholder="Optional note, e.g. 'stopped at a different quay' or 'two stops merged'"></textarea>
+        <p class="help">"Wrong" means the ship didn't stop there, stopped somewhere else, or the times are clearly off (by more than about 30 minutes). Use "Can't tell" when the track is too sparse to judge.</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#8a2c31"></span>Stopped (under 0.5 knots)</span>
+      <span><span class="dot" style="background:#617891"></span>Moving</span>
+      <span><span class="dot" style="background:#d5b893;border:2px solid #25344f"></span>Matched port</span>
+      <span>Thicker line: the stop the pipeline found</span>
+    </div>
+  </div>
+</main>
+<script>
+const VISITS = __VISITS__;
+const SEED = "__SEED__";
+const KEY = "harbouros-accuracy-" + SEED;
+let answers = {};
+try { answers = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(answers)); } catch (e) {} };
+
+const map = L.map("map");
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+let i = 0;
+const firstOpen = VISITS.findIndex((v) => !answers[v.key]);
+if (firstOpen > 0) i = firstOpen;
+
+const esc = (s) => String(s ?? "?").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+const hours = (m) => m == null ? "?" : m < 60 ? m + " min" : (m / 60).toFixed(1) + " h";
+const el = (id) => document.getElementById(id);
+
+function show() {
+  const v = VISITS[i];
+  if (!v) return;
+  el("where").textContent = `Visit ${v.n} of ${VISITS.length}`;
+  el("ship").textContent = v.ship;
+  el("shiptype").textContent = `${v.type || "Unknown type"} · MMSI ${v.mmsi}`;
+  const rows = [
+    ["Port", `${v.port || "?"} (${v.locode || "?"})`],
+    ["Distance to port", v.port_km == null ? "?" : v.port_km + " km"],
+    ["Arrived", v.arrival],
+    ["Stopped", `${v.berth_start} to ${v.berth_end}`],
+    ["Left", v.departure],
+    ["Stay", hours(v.minutes)],
+    ["Seen", v.completeness.replaceAll("_", " ")],
+    ["Confidence", v.confidence],
+    ["Track points", v.track.length],
+  ];
+  el("facts").innerHTML = rows.map(([k, val]) => `<dt>${k}</dt><dd>${esc(val)}</dd>`).join("");
+
+  layer.clearLayers();
+  const pts = v.track.map((p) => [p[0], p[1]]);
+  if (pts.length) L.polyline(pts, { color: "#617891", weight: 2, opacity: 0.8 }).addTo(layer);
+  const inStop = v.track.filter((p) => p[3] >= v.berth_start && p[3] <= v.berth_end).map((p) => [p[0], p[1]]);
+  if (inStop.length) L.polyline(inStop, { color: "#25344f", weight: 6, opacity: 0.6 }).addTo(layer);
+  v.track.forEach((p) => {
+    L.circleMarker([p[0], p[1]], {
+      radius: 4, weight: 1, color: "#fff", fillOpacity: 1,
+      fillColor: p[2] != null && p[2] < 0.5 ? "#8a2c31" : "#617891"
+    }).bindTooltip(`${p[3]} · ${p[2] == null ? "?" : p[2]} kn`).addTo(layer);
+  });
+  const bounds = pts.slice();
+  if (v.port_lat != null) {
+    L.circleMarker([v.port_lat, v.port_lon], { radius: 9, color: "#25344f", weight: 2, fillColor: "#d5b893", fillOpacity: 1 })
+      .bindTooltip(esc(v.port || v.locode), { permanent: true, direction: "right" }).addTo(layer);
+    bounds.push([v.port_lat, v.port_lon]);
+  }
+  if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+  else map.setView([62, 8], 5);
+
+  const a = answers[v.key] || {};
+  document.querySelectorAll(".choices button").forEach((b) => b.classList.toggle("on", b.dataset.a === a.answer));
+  el("note").value = a.note || "";
+  tally();
+}
+
+function tally() {
+  const done = VISITS.filter((v) => answers[v.key]?.answer);
+  const c = done.filter((v) => answers[v.key].answer === "correct").length;
+  const w = done.filter((v) => answers[v.key].answer === "wrong").length;
+  const judged = c + w;
+  el("summary").textContent = `${done.length}/${VISITS.length} answered · ${c} correct, ${w} wrong` +
+    (judged ? ` (${Math.round((100 * c) / judged)}% of judged)` : "");
+  el("bar").style.width = (100 * done.length) / VISITS.length + "%";
+}
+
+function answer(a) {
+  const v = VISITS[i];
+  answers[v.key] = { ...(answers[v.key] || {}), answer: a };
+  save();
+  if (i < VISITS.length - 1) { i++; show(); } else show();
+}
+
+document.querySelectorAll(".choices button").forEach((b) => b.addEventListener("click", () => answer(b.dataset.a)));
+el("note").addEventListener("input", (e) => {
+  const v = VISITS[i];
+  answers[v.key] = { ...(answers[v.key] || {}), note: e.target.value };
+  save();
+});
+el("prev").onclick = () => { if (i > 0) { i--; show(); } };
+el("next").onclick = () => { if (i < VISITS.length - 1) { i++; show(); } };
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "TEXTAREA") return;
+  if (e.key === "1") answer("correct");
+  if (e.key === "2") answer("wrong");
+  if (e.key === "3") answer("unsure");
+  if (e.key === "ArrowRight") el("next").click();
+  if (e.key === "ArrowLeft") el("prev").click();
+});
+el("download").onclick = () => {
+  const cell = (s) => `"${String(s ?? "").replaceAll('"', '""')}"`;
+  const head = "n,port_call_key,mmsi,ship,port,locode,berth_start,berth_end,confidence,answer,note";
+  const lines = VISITS.map((v) => [v.n, v.key, v.mmsi, v.ship, v.port, v.locode, v.berth_start, v.berth_end,
+    v.confidence, answers[v.key]?.answer || "", answers[v.key]?.note || ""].map(cell).join(","));
+  const blob = new Blob([[head, ...lines].join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `harbouros-accuracy-${SEED}.csv`;
+  a.click();
+};
+show();
+</script>
+</body>
+</html>
