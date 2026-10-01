@@ -1,39 +1,16 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x77c00c18400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x77c00c18400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x77c00c18400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x77c00c18400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,611 | 681 | 2,369 | 22,485
 ships drawn: 5785
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/19/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/19/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/19/6.pbf net::ERR_ABORTED
 clicked moving ship: WITH JUNIOR
-ship panel: × Cargo · MMSI 259120000 WITH JUNIOR Under way at 10.8 knots, heading SW. Last seen Thu 1 Oct, 22:59 (10 min ago) 456 nautical miles sailed (3 days) 13 port calls this week 72 min typical stay STOPS THIS WEEK Alta Andenes At sea Botnhamn Fjelldal Harstad Kabelvag Leknes Nordkjosbotn Skjervoy Sortlan
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/35/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/36/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/35/13.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/36/13.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/34/13.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/37/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/37/13.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/70/28.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/70/27.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/73/28.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/73/27.pbf net::ERR_ABORTED
+ship panel: × Cargo · MMSI 259120000 WITH JUNIOR Under way at 10.8 knots, heading SW. Last seen Thu 1 Oct, 22:59 (30 min ago) 456 nautical miles sailed (3 days) 13 port calls this week 72 min typical stay STOPS THIS WEEK Alta Andenes At sea Botnhamn Fjelldal Harstad Kabelvag Leknes Nordkjosbotn Skjervoy Sortlan
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/71/28.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/71/27.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/72/28.pbf net::ERR_ABORTED
 request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/72/27.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/142/56.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/142/55.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/143/56.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/143/55.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/144/56.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/144/55.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/288/111.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/9/288/112.pbf net::ERR_ABORTED
 clicked port: Sorvar
 search "berg": Bergen Port | Bergsfjord Port | Bergneset Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEBUEN Fishing | BERG Passenger & ferries
 picked from search: Bergen
