@@ -55,8 +55,9 @@ Static dashboard on Cloudflare Pages (map, routes, 24-hour replay, charts)
   agree, 0.5 when there is no usable status, and 0.3 when they contradict.
   A visit's score is the reading-weighted average.
 - **Honest labels:** stops more than 10 km from any listed seaport (oil rigs,
-  offshore anchorages, fishing grounds) are kept as `at_sea`, not counted as
-  port calls. Visits whose arrival or departure was not seen are labelled so.
+  offshore anchorages, fishing grounds) are kept as `at_sea`, and stops at a
+  fish farm (from OpenStreetMap) as `fish_farm`; neither counts as a port
+  call. Visits whose arrival or departure was not seen are labelled so.
 - **Incremental everywhere:** each layer only processes new data, so the work
   per run stays flat as history grows.
 

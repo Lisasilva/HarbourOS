@@ -358,6 +358,8 @@ disbelieving an output):
    ship stayed put".
 3. Visits with fewer than 3 readings are dropped.
 4. Stops more than 10 km from a port are `at_sea`, not port calls (PR #7).
+   Stops within 300 m of a fish farm are `fish_farm` (2026-10-01): the
+   reliability check found service boats at farms counted as port calls.
 5. Svalbard ports added (PR #6).
 6. A neighbouring state only counts as witnessing arrival or departure if it
    joins without a gap (PR #15; this removed 1,566 false "complete" ~38-hour
@@ -451,7 +453,8 @@ degrees).
 
 **`fact_port_call`** (grain: one ship stopping once): `port_call_key` (PK, md5
 of mmsi and berth_start), `mmsi` (FK dim_vessel), `port_locode` (FK dim_port,
-NULL when at sea), `visit_type` (port_call/at_sea), `nearest_port_km`,
+NULL unless a port call), `visit_type` (port_call/at_sea/fish_farm),
+`fish_farm_name`, `nearest_port_km`,
 `arrival_date_key` (FK dim_date), `stop_type`, `completeness`, `arrival_time`,
 `berth_start`, `berth_end`, `departure_time`, `minutes_alongside`,
 `n_readings`, `confidence`, `stop_latitude`, `stop_longitude`,
@@ -502,7 +505,7 @@ between facts and dimensions, `accepted_values` on `visit_type`, `stop_type`,
 - `assert_ports_are_in_norway`: every port is inside mainland Norway's or
   Svalbard's bounding box.
 - `assert_visit_type_matches_port_locode`: a `port_call` always has a port and
-  an `at_sea` stop never does.
+  an `at_sea` or `fish_farm` stop never does.
 - `assert_track_has_one_row_per_ship_and_slot`: the track grain holds.
 
 ### Important SQL, explained

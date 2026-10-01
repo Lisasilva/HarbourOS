@@ -82,13 +82,16 @@ models:
                 field: port_locode
       - name: visit_type
         description: >
-          'port_call' when a seaport was matched within port_match_km,
-          'at_sea' otherwise (rigs, fish farms, offshore anchorages).
+          'fish_farm' when the stop was within 300 m of a fish farm,
+          otherwise 'port_call' when a seaport was matched within
+          port_match_km, and 'at_sea' for the rest (rigs, offshore anchorages).
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ["port_call", "at_sea"]
+                values: ["port_call", "at_sea", "fish_farm"]
+      - name: fish_farm_name
+        description: The fish farm's name, for fish_farm stops (may be null if unnamed).
       - name: arrival_date_key
         tests:
           - not_null

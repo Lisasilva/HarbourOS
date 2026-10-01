@@ -16,3 +16,8 @@ sources:
           How far each derived layer has been built, per vessel. dbt reads the
           'port_calls' rows to know which vessels' visits changed since its
           last run.
+      - name: fish_farms
+        description: >
+          Fish farm sites from OpenStreetMap (imported there from the
+          Directorate of Fisheries' register), one bounding box per site.
+          Refreshed monthly by src/HarbourOS/osm.py before dbt runs.

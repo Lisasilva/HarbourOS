@@ -171,6 +171,7 @@ const when = (d) => d.toLocaleString("en-GB", {weekday: "short", day: "numeric",
 const weekday = (d) => d.toLocaleDateString("en-GB", {weekday: "short", timeZone: TZ});
 const hourFormat = new Intl.DateTimeFormat("en-GB", {hour: "numeric", hourCycle: "h23", timeZone: TZ});
 const norwayHour = (d) => +hourFormat.format(d);
+const placeName = (d) => d.port_name ?? (d.visit_type === "fish_farm" ? "Fish farm" : "At sea");
 const stay = (minutes) => (minutes < 90 ? `${Math.round(minutes)} min` : minutes < 48 * 60 ? `${d3.format(".1f")(minutes / 60)} h` : `${d3.format(".1f")(minutes / 1440)} days`);
 const confidenceBand = (c) => (c >= 0.8 ? "high" : c >= 0.5 ? "medium" : "low");
 const compass = (deg) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
@@ -788,7 +789,7 @@ if (map) {
       <h4>Latest stops</h4>
       ${visits.length
         ? html`<ul>${visits.slice(0, 6).map((v) => html`<li>
-            <span>${v.port_name ?? html`<i>At sea</i>`}<br><span class="meta">${when(v.berth_start)} · ${v.in_port_now ? "still there" : stay(v.minutes_alongside)}</span></span>
+            <span>${v.port_name ?? html`<i>${placeName(v)}</i>`}<br><span class="meta">${when(v.berth_start)} · ${v.in_port_now ? "still there" : stay(v.minutes_alongside)}</span></span>
             <span class="pill ${confidenceBand(v.confidence)}" title="How sure we are this was a real stop">${confidenceBand(v.confidence)}</span>
           </li>`)}</ul>`
         : html`<p class="meta">No stops recorded yet.</p>`}
@@ -843,7 +844,7 @@ if (map) {
 ```js
 // A ship's week as a strip: one bar per stop, placed in time, one row per port.
 function stopStrip(visits) {
-  const rows = d3.sort(new Set(visits.map((d) => d.port_name ?? "At sea")));
+  const rows = d3.sort(new Set(visits.map((d) => placeName(d))));
   return Plot.plot({
     height: 28 + 20 * rows.length,
     width: 300,
@@ -857,17 +858,17 @@ function stopStrip(visits) {
       Plot.barX(visits, {
         x1: "berth_start",
         x2: (d) => (d.in_port_now ? latest : d.berth_end),
-        y: (d) => d.port_name ?? "At sea",
+        y: (d) => placeName(d),
         fill: (d) => ({high: "#25344F", medium: "#617891", low: "#D5B893"})[confidenceBand(d.confidence)],
         insetTop: 3,
         insetBottom: 3,
         rx: 3,
-        title: (d) => `${d.port_name ?? "At sea"}\n${when(d.berth_start)}\n${d.in_port_now ? "still there" : stay(d.minutes_alongside)} · ${confidenceBand(d.confidence)} confidence`
+        title: (d) => `${placeName(d)}\n${when(d.berth_start)}\n${d.in_port_now ? "still there" : stay(d.minutes_alongside)} · ${confidenceBand(d.confidence)} confidence`
       }),
       // A dot at each arrival, so short stops still show at a week's scale.
       Plot.dot(visits, {
         x: "berth_start",
-        y: (d) => d.port_name ?? "At sea",
+        y: (d) => placeName(d),
         r: 3.5,
         fill: (d) => ({high: "#25344F", medium: "#617891", low: "#D5B893"})[confidenceBand(d.confidence)],
         stroke: "#fffdf9",

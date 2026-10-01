@@ -87,6 +87,12 @@ jobs:
           REBUILD_PORT_CALLS: ${{ inputs.full_refresh }}
         run: uv run python -m HarbourOS.transform
 
+      # Fish farm sites from OpenStreetMap, which the Gold step reads to tell
+      # boats working at a farm apart from port calls (src/HarbourOS/osm.py).
+      # Downloaded at most once a month; if that fails, the saved list is used.
+      - name: Refresh the fish-farm map
+        run: uv run python -m HarbourOS.osm
+
       # The fact table is incremental: each run only re-matches ships with new
       # data. When the port list or the matching rules change, the older rows
       # need matching again, and "full_refresh" does that once.

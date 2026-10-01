@@ -6,8 +6,9 @@ or dots (stopped); the rest are still listed so a ship can be looked up after
 it has gone quiet.
 
 last_port is the port of the ship's most recent port call, and in_port_now
-uses the same rule as port_calls.csv.py, so the map and the port-call numbers
-agree on which ships are in port.
+uses the same recency rule as port_calls.csv.py, so the map and the port-call
+numbers agree on which ships are in port. It also needs that latest stop to be
+a port call: a boat working at a fish farm or stopped at sea isn't in port.
 """
 
 import sys
@@ -45,7 +46,8 @@ QUERY = f"""
         t.true_heading,
         t.navigational_status,
         p.port_name as last_port,
-        c.completeness in ('departure_unobserved', 'both_unobserved')
+        c.visit_type = 'port_call'
+            and c.completeness in ('departure_unobserved', 'both_unobserved')
             and c.berth_end >= freshness.latest_reading
                 - interval '{IN_PORT_RECENCY_HOURS} hours'
             as in_port_now

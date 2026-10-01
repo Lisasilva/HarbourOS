@@ -32,6 +32,8 @@ from dagster import (
 )
 
 from HarbourOS.ingestion import ingest_batch
+from HarbourOS.osm import refresh_fish_farms
+from HarbourOS.storage import connect
 from HarbourOS.transform import (
     run_port_calls_transform,
     run_silver_transform,
@@ -44,6 +46,7 @@ BRONZE_KEY = AssetKey(["harbouros", "ais_messages_bronze"])
 SILVER_KEY = AssetKey(["harbouros", "ais_messages_silver"])
 PERIODS_KEY = AssetKey(["harbouros", "ship_state_periods"])
 CALLS_KEY = AssetKey(["harbouros", "port_call_events"])
+FARMS_KEY = AssetKey(["harbouros", "fish_farms"])
 GOLD_KEY = AssetKey(["harbouros", "gold_star_schema"])
 
 
@@ -81,7 +84,14 @@ def port_call_events(context: AssetExecutionContext) -> None:
     run_port_calls_transform()
 
 
-@asset(key=GOLD_KEY, deps=[CALLS_KEY], compute_kind="dbt", group_name="warehouse")
+@asset(key=FARMS_KEY, compute_kind="python", group_name="ingestion")
+def fish_farms(context: AssetExecutionContext) -> None:
+    """Fish farm sites from OpenStreetMap, refreshed at most monthly (see osm.py)."""
+    with connect() as conn:
+        context.log.info(f"{refresh_fish_farms(conn)} fish farms")
+
+
+@asset(key=GOLD_KEY, deps=[CALLS_KEY, FARMS_KEY], compute_kind="dbt", group_name="warehouse")
 def gold_star_schema(context: AssetExecutionContext) -> None:
     """The Gold layer: dbt builds every model and runs every data test."""
     result = subprocess.run(
@@ -112,6 +122,7 @@ defs = Definitions(
         ais_messages_silver,
         ship_state_periods,
         port_call_events,
+        fish_farms,
         gold_star_schema,
     ],
     schedules=[harbouros_schedule],
