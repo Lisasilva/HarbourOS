@@ -20,6 +20,15 @@
 -- the North Sea fields. Those are real stops, just not port calls, so they
 -- get their own label rather than silently counting toward port traffic.
 --
+-- confidence combines two independent kinds of evidence that a stop was real.
+-- status_confidence is the state machine's score: does the status the crew
+-- typed agree with the speed the GPS measured? That says more about how
+-- carefully crews keep their status than about whether the stop happened.
+-- The second is location: a ship stopped within a couple of kilometres of a
+-- listed port is very likely at that port whatever its status says. The
+-- final confidence is the stronger of the two, and status_confidence is kept
+-- so the original score can still be inspected.
+--
 -- Haversine is computed in plain SQL rather than pulling in DuckDB's spatial
 -- extension: one formula, no runtime dependency, and exact enough for source
 -- data that is itself only accurate to about 2 km.
@@ -102,7 +111,15 @@ select
     calls.departure_time,
     calls.minutes_alongside,
     calls.n_readings,
-    calls.confidence,
+    calls.confidence as status_confidence,
+    round(greatest(
+        calls.confidence,
+        case
+            when nearest.distance_km <= {{ var('port_close_km', 2) }} then 0.8
+            when nearest.distance_km <= {{ var('port_near_km', 5) }} then 0.6
+            else 0
+        end
+    ), 2) as confidence,
     calls.stop_latitude,
     calls.stop_longitude,
     calls.built_from_received_at
