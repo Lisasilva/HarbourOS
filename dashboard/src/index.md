@@ -16,6 +16,7 @@ const calls = FileAttachment("data/port_calls.csv").csv({typed: true});
 const shipRows = FileAttachment("data/ships.csv").csv({typed: true});
 const trackTable = FileAttachment("data/tracks.parquet").parquet();
 const freshness = FileAttachment("data/freshness.json").json();
+const reliability = FileAttachment("data/reliability.json").json();
 ```
 
 ```js
@@ -1005,6 +1006,57 @@ function mixBar(rows) {
 ```
 
   </div>
+</div>
+
+<div class="card">
+  <h2>How reliable is HarbourOS?</h2>
+  <p class="sub">An independent check, run every time the data refreshes. 100 random port calls from the latest run are compared with OpenStreetMap's map of quays, piers, harbours and ferry terminals. A call counts as confirmed when the ship sat still within 300 m of one of them.</p>
+
+```js
+{
+  const r = reliability.latest;
+  if (!r) {
+    display(html`<p style="margin:.4rem 0 0">The first check runs with the next data refresh.</p>`);
+  } else {
+    const parts = [
+      {key: "confirmed", label: "Confirmed", note: "sat still beside a mapped quay", color: "#25344F"},
+      {key: "not_at_harbour", label: "No mapped quay nearby", note: "may be a quay OpenStreetMap leaves out", color: "#617891"},
+      {key: "moved", label: "Moved during the stop", note: "positions drifted over 300 m", color: "#D5B893"},
+      {key: "too_little_data", label: "Too few positions", note: "under two sightings in the stop", color: "#E8DCC6"}
+    ];
+    const total = r.checked || 1;
+    const past = reliability.history;
+    const pastRate = d3.sum(past, (d) => d.confirmed) / (d3.sum(past, (d) => d.checked) || 1);
+    const misses = reliability.unconfirmed;
+    const reason = Object.fromEntries(parts.map((p) => [p.key, p.label]));
+    display(html`<div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:flex-end;margin-top:.4rem">
+      <div>
+        <div style="font-family:var(--serif);font-size:2.6rem;line-height:1;color:var(--cadet)">${r.confirmed} of ${r.checked}</div>
+        <div style="font-weight:600;margin-top:.25rem">random port calls confirmed (${d3.format(".0%")(r.confirmed / total)})</div>
+      </div>
+      <div style="font-size:.85rem;color:var(--ink-2);max-width:28rem">
+        Checked ${when(new Date(r.checked_at))} Norway time, from ${r.candidates.toLocaleString("en-GB")} port calls that began in the 6 hours before.
+        ${past.length > 1 ? html`Over the last ${past.length} checks, ${d3.format(".0%")(pastRate)} were confirmed.` : ""}
+        OpenStreetMap leaves out some small quays, so this is a cautious figure.
+      </div>
+    </div>
+    <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:.9rem 0 .6rem;gap:2px;background:#fffdf9">${parts.filter((p) => r[p.key]).map(
+      (p) => html`<div title="${p.label}: ${r[p.key]}" style="flex:${r[p.key]};background:${p.color}"></div>`
+    )}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.6rem">${parts.map(
+      (p) => html`<div style="display:flex;gap:.5rem;align-items:flex-start">
+        <span style="flex:none;width:10px;height:10px;border-radius:3px;margin-top:.3rem;background:${p.color};outline:1px solid #d5b893"></span>
+        <div><b>${r[p.key]}</b> ${p.label}<div style="font-size:.78rem;color:var(--ink-2)">${p.note}</div></div>
+      </div>`
+    )}</div>
+    ${misses.length ? html`<details style="margin-top:.8rem"><summary style="cursor:pointer;color:var(--cadet)">The ${misses.length} port calls that weren't confirmed</summary>
+      <ul style="margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem;columns:2 18rem">${misses.map(
+        (m) => html`<li>${m.ship} at ${m.port}: ${reason[m.verdict].toLowerCase()} · <a href="https://www.openstreetmap.org/?mlat=${m.lat}&mlon=${m.lon}#map=16/${m.lat}/${m.lon}" target="_blank" rel="noopener">map</a></li>`
+      )}</ul></details>` : ""}`);
+  }
+}
+```
+
 </div>
 
 <details class="card" style="padding: 1rem 1.25rem;">
