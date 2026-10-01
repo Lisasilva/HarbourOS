@@ -147,6 +147,10 @@ cd dashboard && npm run deploy
   with production branch `master`. The free plan's 500 builds/month limit covers
   Git builds. Direct uploads made with wrangler reportedly don't count (per
   Cloudflare community answers, not official docs).
+- **The dashboard build downloads its libraries from npm.** Run #106
+  (2026-10-01) failed when npm didn't answer, so the workflows keep those
+  libraries in a GitHub cache (`dashboard/src/.observablehq/cache/_npm`) and
+  retry the build up to three times.
 - The dashboard builds on Node 24. The workflow actions are on Node-24 majors
   (checkout, setup-python, setup-uv and setup-node @v7, wrangler-action @v4).
 - Python 3.14 is used in CI. dagster-dbt is avoided because it pins an older
