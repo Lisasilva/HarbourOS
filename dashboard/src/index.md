@@ -983,15 +983,15 @@ function mixBar(rows) {
   </div>
   <div class="card">
     <h2>How sure are we?</h2>
-    <p class="sub">Each stop's confidence: whether the ship's own reported status agrees with its measured speed. A ship broadcasting "moored" at 7 knots scores low.</p>
+    <p class="sub">Each stop is scored by how many signals agree it was real. Speed and position come from GPS. The ship's status ("moored", "under way") is typed in by the crew and is often out of date, so a low score usually means the status wasn't updated, not that the stop is wrong.</p>
 
 ```js
 {
   const stops = weekShown;
   const bands = [
-    {band: "High", note: "status and speed agree", color: "#25344F", n: stops.filter((d) => d.confidence >= 0.8).length},
-    {band: "Medium", note: "mostly agree", color: "#617891", n: stops.filter((d) => d.confidence >= 0.5 && d.confidence < 0.8).length},
-    {band: "Low", note: "status and speed disagree", color: "#D5B893", n: stops.filter((d) => d.confidence < 0.5).length}
+    {band: "High", note: "speed, position and status agree", color: "#25344F", n: stops.filter((d) => d.confidence >= 0.8).length},
+    {band: "Medium", note: "most signals agree", color: "#617891", n: stops.filter((d) => d.confidence >= 0.5 && d.confidence < 0.8).length},
+    {band: "Low", note: "signals disagree, often a stale status", color: "#D5B893", n: stops.filter((d) => d.confidence < 0.5).length}
   ];
   const total = d3.sum(bands, (b) => b.n) || 1;
   display(html`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:.4rem">${bands.map(

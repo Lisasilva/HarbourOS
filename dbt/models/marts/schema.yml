@@ -112,5 +112,7 @@ models:
                   - both_unobserved
       - name: minutes_alongside
         tests: [not_null]
+      - name: status_confidence
+        tests: [not_null]
       - name: confidence
         tests: [not_null]
