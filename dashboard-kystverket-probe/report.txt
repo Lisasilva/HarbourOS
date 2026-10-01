@@ -1,16 +1,12 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x3354018ec200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console warning: [.WebGL-0x38ec0410a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38ec0410a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38ec0410a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x38ec0410a600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,611 | 681 | 2,369 | 22,485
 ships drawn: 5785
 clicked moving ship: WITH JUNIOR
-ship panel: × Cargo · MMSI 259120000 WITH JUNIOR Under way at 10.8 knots, heading SW. Last seen Thu 1 Oct, 22:59 (30 min ago) 456 nautical miles sailed (3 days) 13 port calls this week 72 min typical stay STOPS THIS WEEK Alta Andenes At sea Botnhamn Fjelldal Harstad Kabelvag Leknes Nordkjosbotn Skjervoy Sortlan
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/71/28.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/71/27.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/72/28.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/72/27.pbf net::ERR_ABORTED
+ship panel: × Cargo · MMSI 259120000 WITH JUNIOR Under way at 10.8 knots, heading SW. Last seen Thu 1 Oct, 22:59 (36 min ago) 456 nautical miles sailed (3 days) 13 port calls this week 72 min typical stay STOPS THIS WEEK Alta Andenes At sea Botnhamn Fjelldal Harstad Kabelvag Leknes Nordkjosbotn Skjervoy Sortlan
 clicked port: Sorvar
 search "berg": Bergen Port | Bergsfjord Port | Bergneset Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEBUEN Fishing | BERG Passenger & ferries
 picked from search: Bergen
