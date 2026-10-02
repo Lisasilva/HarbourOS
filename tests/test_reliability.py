@@ -5,6 +5,7 @@ from pathlib import Path
 
 import duckdb
 import pytest
+import requests
 
 from HarbourOS.reliability import (
     dashboard_summary,
@@ -224,3 +225,78 @@ def test_overpass_query_covers_norway_and_svalbard():
     assert 'area["ISO3166-1"~"^(NO|SJ)$"]' in query
     assert 'way["man_made"~"^(pier|quay)$"](area.norway);' in query
     assert ".shapes out tags bb;" in query
+
+
+def with_register(conn: duckdb.DuckDBPyConnection) -> None:
+    conn.execute(
+        "CREATE TABLE kystverket_locations (location_id INTEGER, locode VARCHAR, "
+        "location_name VARCHAR, kind VARCHAR, latitude DOUBLE, longitude DOUBLE)"
+    )
+    conn.execute(
+        "INSERT INTO kystverket_locations VALUES "
+        "(1, 'NOSVG', 'Stavanger Strandkaien', 'quay', 58.9725, 5.7300), "
+        "(2, 'NOBGO', 'Bergen', 'harbour', 60.39, 5.32)"
+    )
+
+
+def test_an_official_voyage_report_confirms_a_stop(tmp_path):
+    conn = warehouse(tmp_path)
+    with_map(conn)
+    with_register(conn)
+    arrival = (LATEST - timedelta(hours=3, minutes=20)).isoformat() + "+00:00"
+    asked = []
+
+    def voyages(mmsis, start, end):
+        asked.append(mmsis)
+        return [
+            # Ship 2 stopped far from any mapped quay (59.5, 6.5): reported at
+            # Stavanger, 100 km away, so it stays unconfirmed.
+            {"mmsi": 2, "origin": "Bergen", "destination": "Stavanger Strandkaien", "eta": arrival},
+            # Ship 4 had too few positions, but reported arriving at a quay
+            # under 1 km from its stop at about the right time.
+            {
+                "mmsi": 4,
+                "origin": "Bergen",
+                "destination": "Stavanger  Strandkaien",
+                "eta": arrival,
+            },
+        ]
+
+    summary = run_check(conn, size=100, seed=1, hours=6, voyages=voyages)
+    assert asked == [[1, 2, 3, 4]]
+    assert summary is not None and summary["official_voyages"] == 2
+    rows = dict(
+        conn.execute(
+            "SELECT port_call_key, verdict || ':' || coalesce(official_place, '-') "
+            "FROM reliability_check_stops"
+        ).fetchall()
+    )
+    assert rows["sparse"] == "confirmed:Stavanger Strandkaien"
+    assert rows["far"] == "not_at_harbour:-"
+    assert rows["confirmed"] == "confirmed:-"
+
+
+def test_unreachable_reports_leave_the_map_check_alone(tmp_path):
+    conn = warehouse(tmp_path)
+    with_map(conn)
+    with_register(conn)
+
+    def down(mmsis, start, end):
+        raise requests.ConnectionError("Kystdatahuset is down")
+
+    summary = run_check(conn, size=100, seed=1, hours=6, voyages=down)
+    assert summary is not None
+    assert summary["official_voyages"] is None and summary["confirmed"] == 1
+
+
+def test_results_append_to_tables_saved_by_an_older_check(tmp_path):
+    conn = warehouse(tmp_path)
+    with_map(conn)
+    conn.execute("CREATE TABLE reliability_checks (checked_at TIMESTAMP, checked INTEGER)")
+    conn.execute(
+        "CREATE TABLE reliability_check_stops (checked_at TIMESTAMP, port_call_key VARCHAR)"
+    )
+    run_check(conn, size=100, seed=1, hours=6)
+    assert conn.execute(
+        "SELECT count(*) FROM reliability_check_stops WHERE verdict IS NOT NULL"
+    ).fetchone() == (4,)
