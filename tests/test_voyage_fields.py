@@ -6,6 +6,7 @@ from pathlib import Path
 
 import duckdb
 
+from HarbourOS import ingestion
 from HarbourOS.collect import voyage_field_coverage
 from HarbourOS.storage import insert_ais_snapshots
 from HarbourOS.transform import run_silver_transform
@@ -107,5 +108,27 @@ def test_coverage_counts_only_fields_that_carry_a_value():
     ]
 
     assert voyage_field_coverage(snapshots) == (
-        "Voyage fields present: destination 1/2, eta 0/2, imoNumber 1/2, callSign 0/2"
+        "Crew-typed fields present: navigationalStatus 0/2, "
+        "destination 1/2, eta 0/2, imoNumber 1/2, callSign 0/2"
     )
+
+
+def test_the_live_api_is_asked_for_the_full_model(monkeypatch):
+    """The default "Simple" model leaves out status and every voyage field."""
+    calls = []
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return [message(1, "2026-10-02 07:59:00", destination="OSLO")]
+
+    def fake_get(url, **kwargs):
+        calls.append(kwargs.get("params"))
+        return Response()
+
+    monkeypatch.setattr(ingestion, "get_access_token", lambda: "token")
+    monkeypatch.setattr(ingestion.requests, "get", fake_get)
+
+    assert ingestion.fetch_ais_data()[0]["destination"] == "OSLO"
+    assert calls == [{"modelType": "Full", "modelFormat": "Json"}]

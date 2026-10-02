@@ -12,6 +12,12 @@ load_dotenv()
 # it hours later, and a killed run doesn't start the next one.
 REQUEST_TIMEOUT = 60
 
+# The live endpoint's default "Simple" model returns only position, speed,
+# course, name and ship type. "Full" adds the navigational status and the
+# crew-typed voyage fields (destination, ETA, IMO number, call sign). Until
+# 2026-10-02 the pipeline asked for the default, so Bronze held none of them.
+LATEST_PARAMS = {"modelType": "Full", "modelFormat": "Json"}
+
 
 def get_access_token():
     """Get a fresh access token from BarentsWatch"""
@@ -48,7 +54,7 @@ def fetch_ais_data(limit=None):
     api_url = "https://live.ais.barentswatch.no/v1/latest/combined"
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    response = requests.get(api_url, headers=headers, timeout=REQUEST_TIMEOUT)
+    response = requests.get(api_url, headers=headers, params=LATEST_PARAMS, timeout=REQUEST_TIMEOUT)
     print(f"API Status: {response.status_code}")
 
     if response.status_code != 200:

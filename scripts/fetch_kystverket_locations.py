@@ -22,7 +22,7 @@ from typing import Any
 
 import requests
 
-SOURCE_URL = "https://kystdatahuset.no/ws/api/location/norway/all/geojson"
+SOURCE_URL = "https://kystdatahuset.kystverket.no/ws/api/location/norway/all/geojson"
 SEED_PATH = Path("dbt/seeds/kystverket_locations.csv")
 # Kystverket's location types, as kept in the seed.
 KINDS = {
