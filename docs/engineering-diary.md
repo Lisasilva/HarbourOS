@@ -259,10 +259,10 @@ HarbourOS/
 | Question | Answer |
 |---|---|
 | Source | **BarentsWatch** (the Norwegian Coastal Administration's open data service), AIS API |
-| Endpoint used | `https://live.ais.barentswatch.no/v1/latest/combined`: each ship's latest message, as JSON, for the Norwegian area |
+| Endpoint used | `https://live.ais.barentswatch.no/v1/latest/combined?modelType=Full&modelFormat=Json`: each ship's latest message, as JSON, for the Norwegian area. The default "Simple" model has only position, speed, course, heading, rate of turn, name and ship type; "Full" adds navigational status and the voyage fields. The pipeline asked for the default until 2026-10-02 (see below) |
 | Auth | OAuth2 client credentials at `https://id.barentswatch.no/connect/token`, scope `ais` |
 | Type | Semi-structured JSON, one object per ship: `mmsi`, `name`, `latitude`, `longitude`, `speedOverGround`, `courseOverGround`, `trueHeading`, `rateOfTurn`, `shipType`, `navigationalStatus`, `stream`, `msgtime` (the columns kept in Bronze) |
-| Voyage fields | `destination`, `eta`, `imoNumber`, `callSign`: typed in by crews, stored raw in Bronze and carried to Silver (`destination`, `eta`, `imo_number`, `call_sign`) from 2026-10-01. Each collect step logs how many messages carried each field. Nothing uses them yet; they feed the destination-resolution plan (§9) |
+| Voyage fields | `destination`, `eta`, `imoNumber`, `callSign`: typed in by crews, stored raw in Bronze and carried to Silver (`destination`, `eta`, `imo_number`, `call_sign`) from 2026-10-01, but run #115 (2026-10-02) logged `destination 0/115529`: the pipeline was asking for the "Simple" model, which leaves these fields out. Collection really starts with the fix that asks for "Full". Each collect step logs how many messages carried each field, navigational status included. Nothing uses them yet; they feed the destination-resolution plan (§9) |
 | Ships per poll | ~4,142–4,147 (pipeline run #94, 2026-09-29/30). The ingestion docstring records 4,014 at an earlier date |
 | New messages per poll | ~3,400 after removing repeats (run #94: 3,393–3,449 for polls 2–33) |
 | Messages per run | 113,147 stored from 33 polls (run #94) |
@@ -329,12 +329,16 @@ crew-typed fields HarbourOS uses are **navigational status**, **ship name** and
 
 - *Navigational status* is the one handled seriously: it is never trusted to
   decide the state, only to score confidence (agree 1.0, no signal 0.5,
-  contradict 0.3).
+  contradict 0.3). Until 2026-10-02 the live feed was requested in its
+  "Simple" form, which has no status, so production stops most likely all
+  scored "no signal" *(inferred from the API's model definitions; not
+  measured in the warehouse)*.
 - *Ship name and type:* `dim_vessel` takes the **most recent** value
   (`arg_max(name, message_time)`), because crews re-broadcast and correct
   them. There is **no** spelling correction or name matching.
-- *Destination text* ("BGO", "BERGN", "FOR ORDERS") is **not collected**, so
-  no destination spelling problems have been seen or fixed. Resolving it is
+- *Destination text* ("BGO", "BERGN", "FOR ORDERS") is only now being
+  collected (see the voyage fields above), so no destination spelling
+  problems have been seen or fixed yet. Resolving it is
   the top AI roadmap item (§9).
 
 **Standardisation and entity matching that *is* implemented:**
@@ -1281,6 +1285,7 @@ next or a genuine question, not a list of hashtags.
 | 2026-09-28 | PR #9–#15: auto full refresh, chained runs + alerts, freshness, README, map redesign, completeness fix |
 | 2026-09-29/30 | PR #16–#19: header, safety checks, back to ~4 runs/day, search and Norway time |
 | 2026-10-01 | PR #21–#22, #25–#26: location evidence in the confidence score, destination and ETA collected; automatic reliability check against OpenStreetMap; fish-farm stops labelled |
+| 2026-10-02 | PR #28–#30: npm cache and retry; score hidden; port calls need an official Kystverket berth (run #115: 77/100). Found that destinations and status never arrived ("Simple" model) and that Kystdatahuset moved address |
 
 ### Key numbers (source and date)
 

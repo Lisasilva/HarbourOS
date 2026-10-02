@@ -84,17 +84,17 @@ def main() -> None:
 
 
 def voyage_field_coverage(snapshots: list[tuple[datetime, list[dict]]]) -> str:
-    """How many messages carried each typed-in voyage field.
+    """How many messages carried each crew-typed field.
 
     These fields are optional in AIS and filled in by crews, so the share that
     arrives is itself worth watching.
     """
     messages = [message for _, batch in snapshots for message in batch]
     parts = []
-    for field in ("destination", "eta", "imoNumber", "callSign"):
+    for field in ("navigationalStatus", "destination", "eta", "imoNumber", "callSign"):
         present = sum(1 for message in messages if message.get(field) not in (None, ""))
         parts.append(f"{field} {present}/{len(messages)}")
-    return "Voyage fields present: " + ", ".join(parts)
+    return "Crew-typed fields present: " + ", ".join(parts)
 
 
 if __name__ == "__main__":

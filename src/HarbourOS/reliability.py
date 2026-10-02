@@ -63,7 +63,9 @@ NEAR_M = 300
 STILL_M = 300
 STILL_SHARE = 0.9
 VERDICTS = ("confirmed", "not_at_harbour", "moved", "too_little_data")
-VOYAGES_URL = "https://kystdatahuset.no/ws/api/voyage/for-ships/by-mmsi"
+# kystdatahuset.no now redirects here, and a redirected POST turns into a GET,
+# which the API refuses (405). Call the current address directly.
+VOYAGES_URL = "https://kystdatahuset.kystverket.no/ws/api/voyage/for-ships/by-mmsi"
 OFFICIAL_M = 2000
 OFFICIAL_HOURS = 12
 

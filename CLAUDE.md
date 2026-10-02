@@ -159,6 +159,12 @@ cd dashboard && npm run deploy
   its own homework): the check uses OpenStreetMap and the ships' official
   voyage reports from Kystdatahuset, and reads the register only to place the
   reported names (anonymous access covers ships of 45 m and longer).
+  Its address is now `kystdatahuset.kystverket.no`: the old `kystdatahuset.no`
+  redirects, and a redirected POST arrives as a GET and gets 405 (run #115).
+- **Ask the live API for `modelType=Full`.** The default "Simple" model has no
+  navigational status, destination, ETA, IMO number or call sign; until
+  2026-10-02 none of those reached Bronze. The collect step logs how many
+  messages carried each one.
 - The dashboard builds on Node 24. The workflow actions are on Node-24 majors
   (checkout, setup-python, setup-uv and setup-node @v7, wrangler-action @v4).
 - Python 3.14 is used in CI. dagster-dbt is avoided because it pins an older
