@@ -855,7 +855,10 @@ on a manual full-refresh run (bumped from the queue).
   read-only data audit.
 - Automatic reliability check (2026-10-01): every run tests 100 random port
   calls against OpenStreetMap's quays, piers, harbours and ferry terminals,
-  and the site shows how many were confirmed (`reliability.py`).
+  and the site shows how many were confirmed (`reliability.py`). The first
+  score was 53/100, and Maria judged it not good enough to show, so the tile
+  is hidden until official Kystverket quays and an anchorage label improve
+  the detection.
 
 ### Partially completed
 

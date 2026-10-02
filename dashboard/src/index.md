@@ -1009,7 +1009,10 @@ function mixBar(rows) {
   </div>
 </div>
 
-<div class="card">
+<!-- Hidden on 2026-10-01 at Maria's request until the improved check (official
+     Kystverket quays, anchorages labelled) is measured and she approves the
+     score. The check still runs and saves its results every run. -->
+<div class="card" hidden>
   <h2>How reliable is HarbourOS?</h2>
   <p class="sub">An independent check, run every time the data refreshes. 100 random port calls from the latest run are compared with OpenStreetMap's map of quays, piers, harbours and ferry terminals. A call counts as confirmed when the ship sat still within 300 m of one of them.</p>
 
