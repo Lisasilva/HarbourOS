@@ -865,7 +865,9 @@ on a manual full-refresh run (bumped from the queue).
   witness is the voyages larger ships report to the authorities (SafeSeaNet),
   read from Kystverket's open Kystdatahuset API: a stop also counts as
   confirmed when the ship reported a voyage to or from a place within 2 km of
-  it, within 12 hours.
+  it, within 12 hours. The first score was 53/100, and Maria judged it not
+  good enough to show, so the tile is hidden until the stricter official-berth
+  rule has been measured and she approves showing it again.
 
 ### Partially completed
 
