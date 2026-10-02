@@ -1,0 +1,17 @@
+console warning: using deprecated parameters for the initialization function; pass a single object instead
+console warning: [.WebGL-0x3e1c00139600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3e1c00139600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3e1c00139600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x3e1c00139600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+kpis: 3,632 | 804 | 1,059 | 11,516
+ships drawn: 5814
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/4/7/2.pbf net::ERR_ABORTED
+clicked moving ship: NEWNEW PANDA 1
+ship panel: × Cargo · MMSI 477909800 NEWNEW PANDA 1 Under way at 13.6 knots, heading SW. Last seen Fri 2 Oct, 20:31 (3 h ago) 605 nautical miles sailed (3 days) 0 port calls this week – typical stay LATEST STOPS No stops recorded yet.
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/36/15.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/33/14.pbf net::ERR_ABORTED
+clicked port: Salangen
+search "berg": Bergen Port | Bergsfjord Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEBUEN Fishing | BERG Passenger & ferries | BERGLIBUEN Other
+picked from search: Bergen
+after reset: zoom 4.1
+console warning: using deprecated parameters for the initialization function; pass a single object instead
