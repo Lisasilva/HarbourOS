@@ -13,13 +13,17 @@ Four kinds of thing are flagged, each with a plain-language reason:
    and the median absolute deviation rather than the mean and standard
    deviation: a handful of very long stays would otherwise drag the "usual"
    up and hide exactly what we look for. A stay still going on counts too,
-   for "longer than usual" only, since it can only get longer.
+   for "longer than usual" only, since it can only get longer. A stay the
+   ship itself often makes (three times or more at that port, within a factor
+   of two) is its routine, not news: a ferry that always turns round in 50
+   minutes where others stay overnight is left alone.
 
 2. odd_stop: a stop in open sea (visit_type 'at_sea': no port, anchorage or
    fish farm nearby) where no other ship has stopped this month. Ships do stop
    at sea for good reasons, at oil fields or in waiting areas, but those
-   places are shared by many ships. Fishing boats are left out, because
-   stopping at sea is their job.
+   places are shared by many ships. Only stops 20 km or more from a port
+   count, and fishing boats, tugs and pilot, rescue and service boats are left
+   out, because stopping at sea is part of their job.
 
 3. unusual_day: a ship's day that doesn't look like the days of other ships
    of its kind. Each ship-day is described by a few numbers (how far it
@@ -28,12 +32,18 @@ Four kinds of thing are flagged, each with a plain-language reason:
    standard machine-learning method for spotting outliers, scores how easy
    that day is to tell apart from the rest. It is trained per kind of ship,
    every run, on the week being checked, so it needs no labelled examples and
-   adapts as traffic changes. The reason names the number that is furthest
-   from what that kind of ship usually does.
+   adapts as traffic changes. The reason names the number that is rarest
+   for that kind of ship (the furthest into the top or bottom of its range).
 
 4. impossible_jump: two positions from one ship, minutes apart, that would
    need a speed no ship can do (over 60 knots). That is a faulty GPS, two
    ships sharing an identity, or a false position.
+
+Only ships are checked: MMSI numbers from 200000000 to 799999999. The others
+belong to search-and-rescue aircraft, buoys, beacons and the like.
+
+Each ship gets at most one flag of each kind, its most unusual one, so one
+ship can't fill the list.
 
 Each run rebuilds the table vessel_anomalies from scratch (it holds a week and
 is small, a few hundred rows), after dbt build. Nothing here feeds back into
@@ -73,6 +83,12 @@ SHORT_STAY_MIN_MINUTES = 15
 # "No other ship stopped here this month": within this distance.
 ODD_STOP_KM = 3.0
 ODD_STOP_MIN_MINUTES = 60
+ODD_STOP_MIN_PORT_KM = 20.0
+# Ships whose work includes stopping at sea.
+STOPS_AT_SEA_FOR_WORK = ("fishing", "towing / tug", "pilot, rescue, service")
+# "The ship's own routine": this many similar stays at the port, where
+# similar means within a factor of two.
+HABIT_STAYS = 3
 EARTH_KM = 6371.0
 # Ship-days with fewer positions than this (two hours) are too thin to judge.
 MIN_DAY_SLOTS = 12
@@ -84,6 +100,9 @@ JUMP_KNOTS = 60.0
 JUMP_MIN_KM = 2.0
 # AIS speed 102.3 means "not available" (102.2 is "102.2 or more"): not a speed.
 MAX_REAL_SOG = 102.0
+
+# Ship stations only, not aircraft (111...), coast stations or beacons (97...).
+SHIPS_ONLY = "mmsi BETWEEN 200000000 AND 799999999"
 
 KINDS = ("long_stay", "short_stay", "odd_stop", "unusual_day", "impossible_jump")
 COLUMNS = [
@@ -100,7 +119,7 @@ COLUMNS = [
     "detected_at",
 ]
 
-STAYS = """
+STAYS = f"""
 SELECT f.mmsi, f.port_locode, p.port_name, v.ship_category, f.completeness,
        f.minutes_alongside, f.berth_start, f.berth_end,
        f.stop_latitude AS latitude, f.stop_longitude AS longitude
@@ -110,14 +129,15 @@ LEFT JOIN dim_port p USING (port_locode)
 WHERE f.visit_type = 'port_call'
   AND f.completeness IN ('complete', 'departure_unobserved')
   AND f.minutes_alongside > 0
+  AND f.{SHIPS_ONLY}
 """
 
-AT_SEA = """
+AT_SEA = f"""
 SELECT f.mmsi, v.ship_category, f.minutes_alongside, f.berth_start, f.berth_end,
        f.stop_latitude AS latitude, f.stop_longitude AS longitude, f.nearest_port_km
 FROM fact_port_call f
 JOIN dim_vessel v USING (mmsi)
-WHERE f.visit_type = 'at_sea' AND f.stop_latitude IS NOT NULL
+WHERE f.visit_type = 'at_sea' AND f.stop_latitude IS NOT NULL AND f.{SHIPS_ONLY}
 """
 
 # One row per ship per day, from the 10-minute track. Only whole days: the
@@ -131,6 +151,7 @@ WITH t AS (
            lag(latitude) OVER w AS prev_lat,
            lag(longitude) OVER w AS prev_lon
     FROM fct_vessel_track
+    WHERE {SHIPS_ONLY}
     WINDOW w AS (PARTITION BY mmsi ORDER BY message_time)
 ),
 steps AS (
@@ -164,6 +185,7 @@ WITH t AS (
            lag(latitude) OVER w AS prev_lat,
            lag(longitude) OVER w AS prev_lon
     FROM fct_vessel_track
+    WHERE {SHIPS_ONLY}
     WINDOW w AS (PARTITION BY mmsi ORDER BY message_time)
 ),
 steps AS (
@@ -213,7 +235,7 @@ def plural(category: str) -> str:
         "cargo": "cargo ships",
         "tanker": "tankers",
         "leisure": "leisure boats",
-    }.get(category, "ships of this kind")
+    }.get(category, "ships of the same type")
 
 
 def robust_spread(values: pd.Series) -> tuple[float, float]:
@@ -240,9 +262,17 @@ def stay_anomalies(stays: pd.DataFrame, since: datetime) -> list[dict[str, Any]]
         for key, group in finished.groupby("ship_category")
     }
 
+    own = {
+        key: group["log_minutes"].to_numpy()
+        for key, group in stays.groupby(["mmsi", "port_locode"])
+    }
+
     found = []
     recent = stays[stays["berth_end"] >= since]
     for row in recent.itertuples(index=False):
+        habit = own[(row.mmsi, row.port_locode)]
+        if (np.abs(habit - row.log_minutes) < math.log(2)).sum() - 1 >= HABIT_STAYS:
+            continue
         port_stats = by_port.get((row.port_locode, row.ship_category))
         at_port = port_stats is not None and port_stats[0] >= MIN_GROUP
         stats = port_stats if at_port else by_type.get(row.ship_category)
@@ -303,8 +333,9 @@ def odd_stops(at_sea: pd.DataFrame, since: datetime) -> list[dict[str, Any]]:
     for i, row in enumerate(at_sea.itertuples(index=False)):
         if (
             row.berth_end < since
-            or row.ship_category == "fishing"
+            or row.ship_category in STOPS_AT_SEA_FOR_WORK
             or row.minutes_alongside < ODD_STOP_MIN_MINUTES
+            or row.nearest_port_km < ODD_STOP_MIN_PORT_KM
         ):
             continue
         others = {int(mmsis[j]) for j in neighbours[i]} - {int(row.mmsi)}
@@ -358,14 +389,22 @@ def _day_values(days: pd.DataFrame) -> np.ndarray:
 
 
 def _day_reason(day: pd.Series, group: pd.DataFrame, category: str) -> str:
-    """Name the number furthest from what this kind of ship usually does."""
-    values = _day_values(group)
-    mine = _day_values(day.to_frame().T)[0]
-    distances = []
-    for k in range(values.shape[1]):
-        median, spread = robust_spread(pd.Series(values[:, k]))
-        distances.append(abs(mine[k] - median) / (spread or 1e-9))
-    column = list(DAY_FEATURES)[int(np.argmax(distances))]
+    """Name the number that is rarest for this kind of ship.
+
+    Rarest means furthest into the top or bottom of the group's range: the
+    share of the group's days with a smaller value (ties count half), or with
+    a larger one, whichever is smaller.
+    """
+    rarity = {}
+    for column in DAY_FEATURES:
+        values = group[column].astype(float)
+        mine = float(day[column])
+        below = ((values < mine).sum() + 0.5 * (values == mine).sum()) / len(values)
+        # Ties (both the highest of the week, say) go to the one further from
+        # the middle, in robust standard deviations.
+        median, spread = robust_spread(values)
+        rarity[column] = (min(below, 1 - below), -abs(mine - median) / (spread or 1e-9))
+    column = min(rarity, key=lambda name: rarity[name])
     mine_raw, usual_raw = float(day[column]), float(group[column].median())
     if column == "longest_gap_min":
         mine_text, usual_text = hours_text(mine_raw), hours_text(usual_raw)
@@ -413,6 +452,10 @@ def unusual_days(days: pd.DataFrame, categories: dict[int, str]) -> list[dict[st
 
 def impossible_jumps(jumps: pd.DataFrame) -> list[dict[str, Any]]:
     """Positions minutes apart that no ship could travel between."""
+    if jumps.empty:
+        return []
+    days_with_jumps = jumps.groupby("mmsi").size()
+    jumps = jumps.sort_values("knots", ascending=False).drop_duplicates("mmsi")
     return [
         {
             "mmsi": row.mmsi,
@@ -425,7 +468,12 @@ def impossible_jumps(jumps: pd.DataFrame) -> list[dict[str, Any]]:
             "score": round(float(row.knots)),
             "reason": (
                 f"Jumped {row.km:.0f} km in {round(row.minutes)} minutes "
-                f"(about {row.knots:.0f} knots): a faulty or false position."
+                f"(about {row.knots:.0f} knots): a faulty or false position"
+                + (
+                    f", on {days_with_jumps[row.mmsi]} days this week."
+                    if days_with_jumps[row.mmsi] > 1
+                    else "."
+                )
             ),
         }
         for row in jumps.itertuples(index=False)
@@ -447,6 +495,7 @@ def find_anomalies(conn: duckdb.DuckDBPyConnection) -> pd.DataFrame:
         + impossible_jumps(conn.execute(JUMPS).df())
     )
     frame = pd.DataFrame(found, columns=COLUMNS)
+    frame = frame.sort_values("score", ascending=False).drop_duplicates(["mmsi", "kind"])
     frame["model_version"] = MODEL_VERSION
     frame["detected_at"] = datetime.now(UTC).replace(tzinfo=None)
     return frame
