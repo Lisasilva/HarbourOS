@@ -130,6 +130,14 @@ jobs:
         continue-on-error: true
         run: uv run python -m HarbourOS.reliability
 
+      # Unusual ship behaviour this week (src/HarbourOS/anomalies.py): long or
+      # short stays, stops in open sea, unusual days and impossible position
+      # jumps, for the "Unusual this week" card. Takes seconds and, like the
+      # reliability check, never stops the site from updating.
+      - name: Look for unusual ship behaviour
+        continue-on-error: true
+        run: uv run python -m HarbourOS.anomalies
+
       # Publish the dashboard. It runs only if every step above succeeded, so
       # the live site never shows a half-built warehouse. The Python data
       # loader in dashboard/src/data reads the fresh Gold tables from
