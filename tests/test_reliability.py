@@ -9,6 +9,7 @@ import requests
 
 from HarbourOS.reliability import (
     dashboard_summary,
+    destination_matches,
     overpass_query,
     parse_features,
     refresh_harbour_map,
@@ -300,3 +301,52 @@ def test_results_append_to_tables_saved_by_an_older_check(tmp_path):
     assert conn.execute(
         "SELECT count(*) FROM reliability_check_stops WHERE verdict IS NOT NULL"
     ).fetchone() == (4,)
+
+
+def test_destination_matching_accepts_names_and_codes_only():
+    names, codes = ["Stavanger", "Ålesund Skansekaia"], ["NOSVG"]
+    for typed in ("STAVANGER", "stavanger havn", "NOSVG", "NO SVG", "SVG", "BERGEN-STAVANGER"):
+        assert destination_matches(typed, names, codes), typed
+    assert destination_matches("ALESUND SKANSEKAIA", names, codes)
+    for typed in ("BERGEN", "STAVANGERFJORD", "FOR ORDERS", "SV", "", "NOBGO"):
+        assert not destination_matches(typed, names, codes), typed
+
+
+def with_destinations(conn: duckdb.DuckDBPyConnection, typed: dict[int, str]) -> None:
+    conn.execute("ALTER TABLE ais_messages_silver ADD COLUMN destination VARCHAR")
+    for mmsi, destination in typed.items():
+        conn.execute(
+            "UPDATE ais_messages_silver SET destination = ? WHERE mmsi = ?", [destination, mmsi]
+        )
+
+
+def test_a_declared_destination_confirms_a_stop(tmp_path):
+    conn = warehouse(tmp_path)
+    with_map(conn)
+    with_register(conn)
+    # Ship 2 stopped far from any quay but says it is bound for Stavanger,
+    # 100 km away: no match. Ship 4 had too few positions, but declared the
+    # port it stopped at.
+    with_destinations(conn, {2: "STAVANGER", 4: "NO SVG"})
+    conn.execute("UPDATE fact_port_call SET port_locode = 'NOBGO' WHERE mmsi = 2")
+
+    summary = run_check(conn, size=100, seed=1, hours=6, voyages=None)
+    assert summary is not None
+    rows = dict(
+        conn.execute(
+            "SELECT port_call_key, verdict || ':' || coalesce(declared_destination, '-') "
+            "FROM reliability_check_stops"
+        ).fetchall()
+    )
+    assert rows["sparse"] == "confirmed:NO SVG"
+    assert rows["far"] == "not_at_harbour:-"
+    assert summary["destination_matches"] == 1 and summary["destination_only"] == 1
+
+
+def test_without_destinations_the_check_runs_as_before(tmp_path):
+    conn = warehouse(tmp_path)
+    with_map(conn)
+    with_register(conn)
+    summary = run_check(conn, size=100, seed=1, hours=6, voyages=None)
+    assert summary is not None
+    assert summary["destination_matches"] == 0 and summary["confirmed"] == 1

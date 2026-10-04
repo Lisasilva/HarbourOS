@@ -137,8 +137,8 @@ Production is `.github/workflows/pipeline.yml`. Each run:
    tests) on MotherDuck;
 3. checks 100 random port calls from the run against OpenStreetMap: confirmed
    when the ship sat still within 300 m of a mapped quay, pier, harbour or
-   ferry terminal, or when the ship's own official voyage report names a place
-   within 2 km (`reliability.py`; the map is downloaded at most monthly);
+   ferry terminal, or when the ship's own official voyage report or its
+   crew-typed AIS destination names a place within 2 km (`reliability.py`; the map is downloaded at most monthly);
 4. builds the dashboard (its Python data loaders query Gold) and publishes it
    to Cloudflare Pages, only if every earlier step passed (a failed reliability
    check doesn't block it; the site then shows the previous check);

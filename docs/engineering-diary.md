@@ -869,7 +869,11 @@ on a manual full-refresh run (bumped from the queue).
   witness is the voyages larger ships report to the authorities (SafeSeaNet),
   read from Kystverket's open Kystdatahuset API: a stop also counts as
   confirmed when the ship reported a voyage to or from a place within 2 km of
-  it, within 12 hours. The first score was 53/100, and Maria judged it not
+  it, within 12 hours. A third witness (2026-10-04) is the destination the
+  crew typed into AIS: a stop counts as confirmed when, in the 24 hours before
+  or during it, the ship named the stop's port (name or UN/LOCODE) or a
+  register place within 2 km. The pipeline never reads the destination to find
+  port calls, so it stays independent. The first score was 53/100, and Maria judged it not
   good enough to show, so the tile was hidden. With the stricter
   official-berth rule, run #115 (2026-10-02) scored 77/100, and Maria chose to
   show the tile again.

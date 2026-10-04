@@ -59,8 +59,8 @@ Everything deploys automatically from `.github/workflows/pipeline.yml`
    (`HarbourOS.collect`), uploads them to Bronze in one go, then builds Silver,
    states and port calls and runs `dbt build` (all against MotherDuck,
    `HARBOUROS_DB=md:harbouros`), then checks 100 random port calls from the run
-   against OpenStreetMap's quays and the ships' official voyage reports
-   (`HarbourOS.reliability`, the reliability tile on the site; it never blocks
+   against OpenStreetMap's quays, the ships' official voyage reports and their
+   declared AIS destinations (`HarbourOS.reliability`, the reliability tile on the site; it never blocks
    the deploy). Each run on `master` starts the next one when
    it ends (a 6-hourly schedule only restarts the chain if it breaks, e.g.
    after a run is cancelled by hand), so collection is continuous and the site
@@ -157,9 +157,9 @@ cd dashboard && npm run deploy
   `scripts/fetch_kystverket_locations.py`. After refreshing it, start the
   Pipeline by hand with "full_refresh" ticked. Being near a listed berth must
   never count as confirmation in the reliability check (it would be marking
-  its own homework): the check uses OpenStreetMap and the ships' official
-  voyage reports from Kystdatahuset, and reads the register only to place the
-  reported names (anonymous access covers ships of 45 m and longer).
+  its own homework): the check uses OpenStreetMap, the ships' official
+  voyage reports from Kystdatahuset and their declared AIS destinations, and
+  reads the register only to place the reported names (anonymous access covers ships of 45 m and longer).
   Its address is now `kystdatahuset.kystverket.no`: the old `kystdatahuset.no`
   redirects, and a redirected POST arrives as a GET and gets 405 (run #115).
 - **Ask the live API for `modelType=Full`.** The default "Simple" model has no

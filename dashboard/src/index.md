@@ -1017,7 +1017,7 @@ function mixBar(rows) {
 
 <div class="card">
   <h2>How reliable is HarbourOS?</h2>
-  <p class="sub">Every time the data refreshes, 100 random port calls are checked against two sources HarbourOS doesn't use to find them: OpenStreetMap's quays and the ships' own official voyage reports. A call is confirmed if either one backs it up.</p>
+  <p class="sub">Every time the data refreshes, 100 random port calls are checked against three sources HarbourOS doesn't use to find them: OpenStreetMap's quays, the ships' official voyage reports and the destination the crew typed in. A call is confirmed if any of them backs it up.</p>
 
 ```js
 {
@@ -1026,7 +1026,7 @@ function mixBar(rows) {
     display(html`<p style="margin:.4rem 0 0">The first check runs with the next data refresh.</p>`);
   } else {
     const parts = [
-      {key: "confirmed", label: "Confirmed", note: "beside a mapped quay, or officially reported", color: "#25344F"},
+      {key: "confirmed", label: "Confirmed", note: "beside a mapped quay, or named by the ship", color: "#25344F"},
       {key: "not_at_harbour", label: "No mapped quay nearby", note: "often a quay OpenStreetMap hasn't mapped", color: "#617891"},
       {key: "moved", label: "Moved during the stop", note: "positions drifted over 300 m", color: "#D5B893"},
       {key: "too_little_data", label: "Too few positions", note: "under two sightings in the stop", color: "#E8DCC6"}
