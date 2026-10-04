@@ -21,9 +21,17 @@ in its open Kystdatahuset API (ships of 45 m and longer, without a login). A
 stop also counts as confirmed when the ship reported a voyage to or from a
 place within 2 km of it, with an estimated arrival or departure within 12
 hours of the stop. The places are looked up in Kystverket's location register
-(the kystverket_locations seed). Neither witness is used to detect port calls:
-the pipeline decides "at a berth" from Kystverket's register, not from
-OpenStreetMap, and never reads the voyage reports.
+(the kystverket_locations seed).
+
+A third witness is the ship's own declared destination, typed in by the crew
+and broadcast over AIS. A stop also counts as confirmed when, in the 24 hours
+before it began or during it, the ship gave as its destination the stop's port
+(by name or UN/LOCODE) or a place in Kystverket's register within 2 km.
+
+None of the witnesses is used to detect port calls: the pipeline decides "at a
+berth" from Kystverket's register, not from OpenStreetMap, and never reads the
+voyage reports or the destination. The register is only used to put a name to
+a reported place, never as evidence on its own.
 
 A stop that passes is "confirmed". A stop with fewer than two positions
 during the stop is "too little data". The headline on the website counts it as
@@ -68,6 +76,7 @@ VERDICTS = ("confirmed", "not_at_harbour", "moved", "too_little_data")
 VOYAGES_URL = "https://kystdatahuset.kystverket.no/ws/api/voyage/for-ships/by-mmsi"
 OFFICIAL_M = 2000
 OFFICIAL_HOURS = 12
+DESTINATION_HOURS = 24
 
 Voyages = Callable[[list[int], datetime, datetime], list[dict[str, Any]]]
 
@@ -81,6 +90,8 @@ CHECK_COLUMNS = {
     **{v: "INTEGER" for v in VERDICTS},
     "harbour_features": "INTEGER",
     "official_voyages": "INTEGER",
+    "destination_matches": "INTEGER",
+    "destination_only": "INTEGER",
 }
 STOP_COLUMNS = {
     "checked_at": "TIMESTAMP",
@@ -96,6 +107,7 @@ STOP_COLUMNS = {
     "harbour_kind": "VARCHAR",
     "harbour_name": "VARCHAR",
     "official_place": "VARCHAR",
+    "declared_destination": "VARCHAR",
     "verdict": "VARCHAR",
 }
 
@@ -257,10 +269,108 @@ def official_records(
     return dict(matches), len(reported)
 
 
+DESTINATIONS = """
+    SELECT DISTINCT c.port_call_key, m.destination
+    FROM checked c
+    JOIN ais_messages_silver m
+      ON m.mmsi = c.mmsi
+     AND m.message_time BETWEEN c.berth_start - to_hours(CAST($hours AS BIGINT)) AND c.berth_end
+    WHERE nullif(trim(m.destination), '') IS NOT NULL
+"""
+
+PLACE_NAMES = """
+    SELECT c.port_call_key, p.port_name, p.port_locode
+    FROM checked c
+    JOIN dim_port p ON p.port_locode = c.port_locode
+    UNION ALL
+    SELECT c.port_call_key, k.location_name, k.locode
+    FROM checked c
+    JOIN kystverket_locations k
+      ON k.latitude BETWEEN c.lat - $near_deg AND c.lat + $near_deg
+     AND k.longitude BETWEEN c.lon - $near_deg / cos(radians(c.lat))
+                         AND c.lon + $near_deg / cos(radians(c.lat))
+    WHERE 6371000 * 2 * asin(sqrt(
+        pow(sin(radians(k.latitude - c.lat) / 2), 2)
+        + cos(radians(c.lat)) * cos(radians(k.latitude))
+        * pow(sin(radians(k.longitude - c.lon) / 2), 2)
+    )) <= $near_m
+"""
+
+_LETTERS = str.maketrans({"Æ": "AE", "Ø": "O", "Å": "A", "Ä": "A", "Ö": "O", "Ü": "U"})
+
+
+def _plain(text: str) -> str:
+    """Upper case, Norwegian letters spelled out, punctuation turned into spaces."""
+    text = text.upper().translate(_LETTERS)
+    return " ".join("".join(ch if ch.isalnum() else " " for ch in text).split())
+
+
+def destination_matches(destination: str, names: list[str], codes: list[str]) -> bool:
+    """Does a crew-typed destination name this place?
+
+    Accepted: the place's UN/LOCODE ("NOSVG", "NO SVG" or "SVG"), or one of its
+    names as a whole word ("BERGEN", "BERGEN HAVN", "STAVANGER-BERGEN").
+    Names shorter than four letters only count as the whole destination.
+    """
+    words = _plain(destination)
+    if not words:
+        return False
+    compact = words.replace(" ", "")
+    for code in codes:
+        code = (code or "").upper()
+        if len(code) == 5 and compact in (code, code[2:]):
+            return True
+    for name in names:
+        name = _plain(name or "")
+        if name == words or (len(name) >= 4 and f" {name} " in f" {words} "):
+            return True
+    return False
+
+
+def declared_destinations(conn: duckdb.DuckDBPyConnection) -> dict[str, str]:
+    """Which checked stops the ship's own declared destination names.
+
+    Returns {port_call_key: destination as typed}. Empty when the warehouse
+    has no destinations yet (collected from 2026-10-02) or no register.
+    """
+    if not _has_table(conn, "kystverket_locations") or not _has_table(conn, "dim_port"):
+        return {}
+    has_destination = conn.execute(
+        "SELECT count(*) FROM duckdb_columns() "
+        "WHERE table_name = 'ais_messages_silver' AND column_name = 'destination'"
+    ).fetchone()
+    if not (has_destination and has_destination[0]):
+        return {}
+    typed: dict[str, list[str]] = {}
+    for key, destination in conn.execute(DESTINATIONS, {"hours": DESTINATION_HOURS}).fetchall():
+        typed.setdefault(key, []).append(destination)
+    if not typed:
+        return {}
+    names: dict[str, list[str]] = {}
+    codes: dict[str, list[str]] = {}
+    for key, name, code in conn.execute(
+        PLACE_NAMES,
+        {"near_m": OFFICIAL_M, "near_deg": OFFICIAL_M / osm.METRES_PER_DEGREE},
+    ).fetchall():
+        names.setdefault(key, []).append(name)
+        codes.setdefault(key, []).append(code)
+    found = {}
+    for key, destinations in typed.items():
+        for destination in sorted(destinations):
+            if destination_matches(destination, names.get(key, []), codes.get(key, [])):
+                found[key] = " ".join(destination.split())
+                break
+    return found
+
+
 def verdict(
-    fixes: int, still_fixes: int, harbour_kind: str | None, official_place: str | None = None
+    fixes: int,
+    still_fixes: int,
+    harbour_kind: str | None,
+    official_place: str | None = None,
+    declared_destination: str | None = None,
 ) -> str:
-    if official_place is not None:
+    if official_place is not None or declared_destination is not None:
         return "confirmed"
     if fixes < 2:
         return "too_little_data"
@@ -305,6 +415,7 @@ def run_check(
     }
 
     official, official_voyages = official_records(conn, chosen, voyages)
+    declared = declared_destinations(conn)
 
     checked_at = osm.now()
     stops = []
@@ -325,7 +436,8 @@ def run_check(
                 "harbour_kind": kind,
                 "harbour_name": name,
                 "official_place": official.get(key),
-                "verdict": verdict(fixes, still, kind, official.get(key)),
+                "declared_destination": declared.get(key),
+                "verdict": verdict(fixes, still, kind, official.get(key), declared.get(key)),
             }
         )
     counts = {v: sum(1 for s in stops if s["verdict"] == v) for v in VERDICTS}
@@ -339,6 +451,14 @@ def run_check(
         **counts,
         "harbour_features": harbour_features,
         "official_voyages": official_voyages,
+        "destination_matches": len(declared),
+        "destination_only": sum(
+            1
+            for s in stops
+            if s["declared_destination"] is not None
+            and verdict(s["fixes"], s["still_fixes"], s["harbour_kind"], s["official_place"])
+            != "confirmed"
+        ),
     }
     _record(conn, summary, stops, save)
     return summary
@@ -467,8 +587,10 @@ def main() -> None:
                 f"(seed {seed}): {summary['confirmed']} confirmed, "
                 f"{summary['not_at_harbour']} not near a mapped quay, {summary['moved']} moved, "
                 f"{summary['too_little_data']} too little data. "
-                f"Official voyage reports: {summary['official_voyages']}."
+                f"Official voyage reports: {summary['official_voyages']}. "
+                f"Destinations naming the stop: {summary['destination_matches']}."
             )
+            print(f"Confirmed by the destination alone: {summary['destination_only']}.")
         if args.json:
             args.json.write_text(json.dumps(dashboard_summary(conn)))
     finally:
