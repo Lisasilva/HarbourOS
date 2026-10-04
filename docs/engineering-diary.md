@@ -1291,6 +1291,7 @@ next or a genuine question, not a list of hashtags.
 | 2026-09-29/30 | PR #16–#19: header, safety checks, back to ~4 runs/day, search and Norway time |
 | 2026-10-01 | PR #21–#22, #25–#26: location evidence in the confidence score, destination and ETA collected; automatic reliability check against OpenStreetMap; fish-farm stops labelled |
 | 2026-10-02 | PR #28–#30: npm cache and retry; score hidden; port calls need an official Kystverket berth (run #115: 77/100). Found that destinations and status never arrived ("Simple" model) and that Kystdatahuset moved address |
+| 2026-10-03/04 | PR #31–#35: "Full" model and Kystdatahuset's new address; score shown with shorter text; the crew's typed destination as a third reliability witness (preview 93/100); confidence card renamed "How accurate are the ship's signals?" |
 
 ### Key numbers (source and date)
 

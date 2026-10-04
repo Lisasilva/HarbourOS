@@ -990,8 +990,8 @@ function mixBar(rows) {
 
   </div>
   <div class="card">
-    <h2>How sure are we?</h2>
-    <p class="sub">How many signals agree that a stop was real. A low score usually means the crew didn't update the ship's status, not that the stop is wrong.</p>
+    <h2>How accurate are the ship's signals?</h2>
+    <p class="sub">Whether the ship's speed, its crew-set status and its position all point to the same stop.</p>
 
 ```js
 {
@@ -1017,7 +1017,7 @@ function mixBar(rows) {
 
 <div class="card">
   <h2>How reliable is HarbourOS?</h2>
-  <p class="sub">Every time the data refreshes, 100 random port calls are checked against three sources HarbourOS doesn't use to find them: OpenStreetMap's quays, the ships' official voyage reports and the destination the crew typed in. A call is confirmed if any of them backs it up.</p>
+  <p class="sub">How many of 100 random stops an outside source confirms: maps, official voyage reports or the destination the crew typed in.</p>
 
 ```js
 {
