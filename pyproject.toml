@@ -16,6 +16,7 @@ dependencies = [
     "dbt-duckdb>=1.11.0",
     "dagster>=1.13.20",
     "dagster-webserver>=1.13.20",
+    "scikit-learn>=1.7",
 ]
 
 [dependency-groups]

@@ -77,6 +77,12 @@ jobs:
         continue-on-error: true
         run: uv run python -m HarbourOS.reliability --no-save --json "$RUNNER_TEMP/reliability.json"
 
+      # The same for unusual behaviour: the result goes to a file, not the
+      # warehouse (see anomalies.json.py).
+      - name: Look for unusual ship behaviour (without saving)
+        continue-on-error: true
+        run: uv run python -m HarbourOS.anomalies --no-save --json "$RUNNER_TEMP/anomalies.json"
+
       # The dashboard's libraries (d3, maplibre, ...) are downloaded from npm
       # during the build. Keeping them between runs means a hiccup at npm can't
       # stop the site from updating (run #106 failed on exactly that). Only
@@ -92,6 +98,7 @@ jobs:
         working-directory: dashboard
         env:
           RELIABILITY_JSON: ${{ runner.temp }}/reliability.json
+          ANOMALIES_JSON: ${{ runner.temp }}/anomalies.json
         run: |
           npm ci
           # Try up to three times in case npm is briefly unreachable.

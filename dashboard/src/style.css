@@ -662,3 +662,87 @@ a {
     display: none;
   }
 }
+
+/* "Unusual this week": kind filters, then one row per flag. */
+.unusual-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0.6rem;
+}
+
+.unusual-kinds button {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.unusual-kinds button span {
+  color: var(--muted);
+  margin-left: 0.2rem;
+}
+
+.unusual-kinds button[aria-pressed="true"] {
+  background: var(--cadet);
+  border-color: var(--cadet);
+  color: #fffdf9;
+}
+
+.unusual-kinds button[aria-pressed="true"] span {
+  color: #d5b893;
+}
+
+.unusual {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 0 1.5rem;
+  max-width: none;
+}
+
+.unusual li {
+  padding: 0.55rem 0;
+  border-top: 1px solid #efe5d4;
+  font-size: 0.86rem;
+  max-width: none;
+}
+
+.unusual-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 0.6rem;
+  margin-bottom: 0.15rem;
+}
+
+.unusual .ship {
+  all: unset;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--cadet);
+}
+
+.unusual .ship:hover,
+.unusual .ship:focus-visible {
+  color: var(--mortuum);
+  text-decoration: underline;
+}
+
+.unusual .meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.unusual-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0.6rem 0 0;
+  max-width: none;
+}

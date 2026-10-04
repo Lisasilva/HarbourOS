@@ -17,6 +17,7 @@ const shipRows = FileAttachment("data/ships.csv").csv({typed: true});
 const trackTable = FileAttachment("data/tracks.parquet").parquet();
 const freshness = FileAttachment("data/freshness.json").json();
 const reliability = FileAttachment("data/reliability.json").json();
+const anomalies = FileAttachment("data/anomalies.json").json();
 ```
 
 ```js
@@ -1059,6 +1060,62 @@ function mixBar(rows) {
       <ul style="margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem;columns:2 18rem">${misses.map(
         (m) => html`<li>${m.ship} at ${m.port}: ${reason[m.verdict].toLowerCase()} · <a href="https://www.openstreetmap.org/?mlat=${m.lat}&mlon=${m.lon}#map=16/${m.lat}/${m.lon}" target="_blank" rel="noopener">map</a></li>`
       )}</ul></details>` : ""}`);
+  }
+}
+```
+
+</div>
+
+<div class="card">
+  <h2>Unusual this week</h2>
+  <p class="sub">Things ships did this week that are rare for their type, and why each one stood out. Unusual doesn't mean wrong.</p>
+
+```js
+{
+  const kinds = [
+    {key: "long_stay", label: "Long stays", one: "Long stay"},
+    {key: "short_stay", label: "Short stays", one: "Short stay"},
+    {key: "odd_stop", label: "Stops in open sea", one: "Stop in open sea"},
+    {key: "unusual_day", label: "Unusual days", one: "Unusual day"},
+    {key: "impossible_jump", label: "Impossible jumps", one: "Impossible jump"}
+  ];
+  const label = Object.fromEntries(kinds.map((k) => [k.key, k.one]));
+  const flags = anomalies.flags;
+  if (!flags.length) {
+    display(html`<p style="margin:.4rem 0 0">The first check runs with the next data refresh.</p>`);
+  } else {
+    const onMap = new Set(ships.map((s) => s.mmsi));
+    const showShip = (f) => {
+      select({kind: "ship", mmsi: f.mmsi});
+      mapCard.scrollIntoView({behavior: "smooth", block: "start"});
+    };
+    let picked = null;
+    const list = html`<ul class="unusual"></ul>`;
+    const buttons = html`<div class="unusual-kinds">${kinds.filter((k) => anomalies.counts[k.key]).map(
+      (k) => html`<button data-kind=${k.key}>${k.label} <span>${anomalies.counts[k.key]}</span></button>`
+    )}</div>`;
+    const render = () => {
+      for (const b of buttons.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.kind === picked));
+      list.replaceChildren(
+        ...flags.filter((f) => !picked || f.kind === picked).slice(0, 12).map(
+          (f) => html`<li>
+            <div class="unusual-head">
+              ${onMap.has(f.mmsi) ? html`<button class="ship" onclick=${() => showShip(f)}>${f.ship}</button>` : html`<b>${f.ship}</b>`}
+              <span class="meta">${label[f.kind]} · ${f.kind === "unusual_day" ? new Date(f.started_at).toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short", timeZone: "UTC"}) : when(new Date(f.started_at))}</span>
+            </div>
+            <div>${f.reason}</div>
+          </li>`
+        )
+      );
+    };
+    for (const b of buttons.querySelectorAll("button")) {
+      b.onclick = () => {
+        picked = picked === b.dataset.kind ? null : b.dataset.kind;
+        render();
+      };
+    }
+    render();
+    display(html`${buttons}${list}<p class="unusual-note">Found by comparing each ship with others of its type this week, including a machine-learning outlier check (Isolation Forest). Showing the most unusual of each kind; pick a kind to see only those.</p>`);
   }
 }
 ```

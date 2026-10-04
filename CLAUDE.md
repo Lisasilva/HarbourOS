@@ -61,7 +61,9 @@ Everything deploys automatically from `.github/workflows/pipeline.yml`
    `HARBOUROS_DB=md:harbouros`), then checks 100 random port calls from the run
    against OpenStreetMap's quays, the ships' official voyage reports and their
    declared AIS destinations (`HarbourOS.reliability`, the reliability tile on the site; it never blocks
-   the deploy). Each run on `master` starts the next one when
+   the deploy), then looks for unusual behaviour in the last week (`HarbourOS.anomalies`: odd stays,
+   stops in open sea, Isolation Forest on ship-days, impossible jumps; the "Unusual this week" card,
+   also never blocking). Each run on `master` starts the next one when
    it ends (a 6-hourly schedule only restarts the chain if it breaks, e.g.
    after a run is cancelled by hand), so collection is continuous and the site
    updates about 4 times a day. Hourly runs (50 minutes of collection) were
@@ -188,11 +190,13 @@ Done:
 - 7. Automatic reliability check against OpenStreetMap, shown on the site
   (PR #25), and fish-farm stops labelled instead of counted as port calls
   (PR #26).
+- 8. First AI feature: unusual-behaviour flags and "Unusual this week"
+  (2026-10-04).
 
 Next:
-- AI features, designed but not built: collect the AIS destination field,
-  resolve destinations to UN/LOCODE, then a slim unusual-behaviour stage;
-  ETA prediction later (see the diary's AI roadmap).
+- AI features (see the diary's AI roadmap): resolve the collected AIS
+  destinations to UN/LOCODE once a week of them exists (from about
+  2026-10-10), then missing-quay discovery; dwell and ETA prediction later.
 - Quays missing from UN/LOCODE (~1,600 stops 10-25 km from a listed port in
   the 2026-09-28 audit).
 - Re-run the data audit.
