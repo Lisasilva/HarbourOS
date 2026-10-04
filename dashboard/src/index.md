@@ -939,7 +939,7 @@ function mixBar(rows) {
   </div>
   <div class="card">
     <h2>How long ships stay</h2>
-    <p class="sub">Visits where both the arrival and the departure were seen, by hours alongside (stays over 48 hours in the last bar)</p>
+    <p class="sub">Hours in port, for visits where we saw the ship arrive and leave. The last bar is 48 hours or more.</p>
 
 ```js
 {
@@ -968,7 +968,7 @@ function mixBar(rows) {
 <div class="grid grid-cols-2">
   <div class="card">
     <h2>How close to a known port?</h2>
-    <p class="sub">Every stop is matched to the nearest official (UN/LOCODE) port. Stops far from any listed port are often quays the list leaves out, or rigs and fishing grounds.</p>
+    <p class="sub">How far each stop was from the nearest official port. Far-off stops are usually small quays missing from the list, oil rigs or fishing grounds.</p>
 
 ```js
 {
@@ -991,7 +991,7 @@ function mixBar(rows) {
   </div>
   <div class="card">
     <h2>How sure are we?</h2>
-    <p class="sub">Each stop is scored by how many signals agree it was real. Speed and position come from GPS. The ship's status ("moored", "under way") is typed in by the crew and is often out of date, so a low score usually means the status wasn't updated, not that the stop is wrong.</p>
+    <p class="sub">How many signals agree that a stop was real. A low score usually means the crew didn't update the ship's status, not that the stop is wrong.</p>
 
 ```js
 {
@@ -1017,7 +1017,7 @@ function mixBar(rows) {
 
 <div class="card">
   <h2>How reliable is HarbourOS?</h2>
-  <p class="sub">An independent check, run every time the data refreshes. 100 random port calls from the latest run are compared with OpenStreetMap's map of quays, piers, harbours and ferry terminals. A call counts as confirmed when the ship sat still within 300 m of one of them, or when the ship's own official voyage report to Kystverket names a place within 2 km. HarbourOS only counts a stop as a port call when it is beside an official Kystverket berth, but that list is never used to confirm a call, so the check stays independent.</p>
+  <p class="sub">Every time the data refreshes, 100 random port calls are checked against two sources HarbourOS doesn't use to find them: OpenStreetMap's quays and the ships' own official voyage reports. A call is confirmed if either one backs it up.</p>
 
 ```js
 {
@@ -1026,8 +1026,8 @@ function mixBar(rows) {
     display(html`<p style="margin:.4rem 0 0">The first check runs with the next data refresh.</p>`);
   } else {
     const parts = [
-      {key: "confirmed", label: "Confirmed", note: "sat still beside a mapped quay", color: "#25344F"},
-      {key: "not_at_harbour", label: "No mapped quay nearby", note: "may be a quay OpenStreetMap leaves out", color: "#617891"},
+      {key: "confirmed", label: "Confirmed", note: "beside a mapped quay, or officially reported", color: "#25344F"},
+      {key: "not_at_harbour", label: "No mapped quay nearby", note: "often a quay OpenStreetMap hasn't mapped", color: "#617891"},
       {key: "moved", label: "Moved during the stop", note: "positions drifted over 300 m", color: "#D5B893"},
       {key: "too_little_data", label: "Too few positions", note: "under two sightings in the stop", color: "#E8DCC6"}
     ];
@@ -1041,10 +1041,9 @@ function mixBar(rows) {
         <div style="font-family:var(--serif);font-size:2.6rem;line-height:1;color:var(--cadet)">${r.confirmed} of ${r.checked}</div>
         <div style="font-weight:600;margin-top:.25rem">random port calls confirmed (${d3.format(".0%")(r.confirmed / total)})</div>
       </div>
-      <div style="font-size:.85rem;color:var(--ink-2);max-width:28rem">
-        Checked ${when(new Date(r.checked_at))} Norway time, from ${r.candidates.toLocaleString("en-GB")} port calls that began in the 6 hours before.
-        ${past.length > 1 ? html`Over the last ${past.length} checks, ${d3.format(".0%")(pastRate)} were confirmed.` : ""}
-        OpenStreetMap leaves out some small quays, so this is a cautious figure.
+      <div style="font-size:.85rem;color:var(--ink-2);flex:1 1 20rem">
+        Checked ${when(new Date(r.checked_at))} Norway time, from ${r.candidates.toLocaleString("en-GB")} port calls in the 6 hours before.
+        ${past.length > 1 ? html`Average of the last ${past.length} checks: ${d3.format(".0%")(pastRate)}.` : ""}
       </div>
     </div>
     <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:.9rem 0 .6rem;gap:2px;background:#fffdf9">${parts.filter((p) => r[p.key]).map(

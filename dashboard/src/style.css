@@ -68,6 +68,8 @@ a {
   color: var(--muted);
   font-size: 0.82rem;
   margin: 0 0 0.6rem;
+  /* Use the card's full width (the framework caps paragraphs at 640px). */
+  max-width: none;
 }
 
 /* ---- Header ---- */
