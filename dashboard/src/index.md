@@ -1101,7 +1101,7 @@ function mixBar(rows) {
           (f) => html`<li>
             <div class="unusual-head">
               ${onMap.has(f.mmsi) ? html`<button class="ship" onclick=${() => showShip(f)}>${f.ship}</button>` : html`<b>${f.ship}</b>`}
-              <span class="meta">${label[f.kind]} · ${when(new Date(f.started_at))}</span>
+              <span class="meta">${label[f.kind]} · ${f.kind === "unusual_day" ? new Date(f.started_at).toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short", timeZone: "UTC"}) : when(new Date(f.started_at))}</span>
             </div>
             <div>${f.reason}</div>
           </li>`

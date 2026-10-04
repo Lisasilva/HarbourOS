@@ -922,7 +922,7 @@ on a manual full-refresh run (bumped from the queue).
 
 ## 9. AI integration roadmap
 
-**Nothing here is built.** This builds on the design written on 2026-09-30
+**#3 (unusual behaviour) is built (2026-10-04); the rest is not.** This builds on the design written on 2026-09-30
 (`ai-plan/ai-design.md` in the project files). Your constraints: free and open
 source only, no paid APIs, no chatbot, no text summaries, run inside the
 existing GitHub Actions pipeline.
@@ -933,7 +933,7 @@ existing GitHub Actions pipeline.
 |---|---|---|
 | 1 | Destination entity resolution | Solves a real data-quality problem, feeds the confidence score, cheap, measurable |
 | 2 | Missing-quay discovery (clustering of unmatched stops) | Uses data you already have, fixes a known accuracy gap, very data-engineering |
-| 3 | Unusual-behaviour detection (slim) | Uses existing data; good if evaluated honestly |
+| 3 | Unusual-behaviour detection (slim), **built 2026-10-04** | Uses existing data; good if evaluated honestly |
 | 4 | Departure-time (dwell) forecast | Feasible now, visible on the dashboard, more data science than DE |
 | 5 | ETA prediction | Strongest ML showcase, but depends on #1 and weeks of history |
 
@@ -1008,6 +1008,39 @@ remove impossible positions).
   model_version) after `dbt build`; "Unusual this week" on the dashboard.
 - **Interviewer impact:** medium to high, only with the honest evaluation.
   Unlabelled anomaly detection is easy to over-claim.
+
+**As built (2026-10-04, `src/HarbourOS/anomalies.py`).** Maria picked this
+first. Four kinds of flag, each with a plain-language reason, rebuilt every
+run into the table `vessel_anomalies` and shown as "Unusual this week":
+
+| Kind | How | Main guard against noise |
+|---|---|---|
+| Long / short stay | Log of the stay vs the median and median absolute deviation of that ship type at that port (all ports if under 10 stays); cut-off 3.5 | Long must be 24 h+; short only with a port-level baseline; a stay the ship itself makes 3+ times is its routine |
+| Stop in open sea | Neighbour search (BallTree): no other ship stopped within 3 km this month | 20 km+ from a port; fishing boats, tugs and service boats left out |
+| Unusual day | Isolation Forest per ship type on distance, top speed, share moving, longest silence and positions sent; top 0.3% of days | Whole days with 12+ positions only; reason names the rarest number |
+| Impossible jump | Two positions 5-60 min apart implying over 60 knots and 2 km+ | One flag per ship, with how many days it happened |
+
+Only ship MMSIs (200-799 million) are checked: the first real-data run
+flagged search-and-rescue helicopters (MMSI 111...) "reaching 97 knots". Each
+ship gets at most one flag per kind. Changes from the design: the
+failed-approach rule was left out (needs reliable approach states first),
+the table is `vessel_anomalies` (it is written by Python, not dbt), and odd
+locations use a neighbour count, the core idea of DBSCAN, because the
+question is "did anyone else stop here", not "where are the groups".
+
+First real week (preview, 2026-10-04): 26 long stays, 39 short stays, 60
+stops in open sea, 56 unusual days, 13 impossible jumps, in about 7 seconds.
+Tuning on that data cut open-sea stops from 414 (coastal stops, fishing
+boats, repeat visits) and short stays from 79 (ferries whose normal 50-minute
+turnaround looked short next to overnight ferries). Examples: a ferry laid up
+41 hours at a quay where ships stay 21 minutes; a fast rescue boat at 55
+knots; a ship broadcasting as "FRENCH WARSHIP" jumping 1,029 km in 10 minutes.
+
+*Evaluation:* `tests/test_anomalies.py` plants a 5-day stay, a lone stop in
+open sea and a ship at 65 knots in a normal synthetic week and checks each is
+caught, and that a fishing boat at sea, ships at a shared oil field, a ship's
+own routine and an aircraft are not. There are no labels, so the real-data
+flags are a list to look at, not a measured accuracy.
 
 ### 4. Departure-time (dwell) forecast
 

@@ -139,9 +139,14 @@ Production is `.github/workflows/pipeline.yml`. Each run:
    when the ship sat still within 300 m of a mapped quay, pier, harbour or
    ferry terminal, or when the ship's own official voyage report or its
    crew-typed AIS destination names a place within 2 km (`reliability.py`; the map is downloaded at most monthly);
+   then flags unusual behaviour in the last week (`anomalies.py`): stays far
+   longer or shorter than usual for the ship type and port, stops in open sea
+   where no other ship stopped, ship-days a machine-learning outlier check
+   (Isolation Forest) finds unusual, and position jumps no ship could make;
 4. builds the dashboard (its Python data loaders query Gold) and publishes it
    to Cloudflare Pages, only if every earlier step passed (a failed reliability
-   check doesn't block it; the site then shows the previous check);
+   check or unusual-behaviour step doesn't block it; the site then shows the
+   previous result);
 5. opens or updates a "Pipeline is failing" GitHub issue on failure, and closes
    it on the next success;
 6. starts the next run itself, so collection is continuous. A 6-hourly cron
@@ -157,7 +162,7 @@ Other workflows: `ci.yml` (lint, types, tests on every PR), `preview.yml`
 
 ```
 src/HarbourOS/   collect and ingestion, storage (warehouse I/O), transform (Silver runner and
-                 incremental rebuilds), state_machine, port_calls, reliability, audit,
+                 incremental rebuilds), state_machine, port_calls, reliability, anomalies, audit,
                  orchestration (Dagster)
 sql/             Silver accept/reject rules
 dbt/             staging and mart models, UN/LOCODE port seed, data tests
