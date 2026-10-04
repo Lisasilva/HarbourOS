@@ -1,31 +1,14 @@
 console warning: using deprecated parameters for the initialization function; pass a single object instead
-console warning: [.WebGL-0x18ac018fee00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x18ac018fee00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x18ac018fee00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-console warning: [.WebGL-0x18ac018fee00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+console warning: [.WebGL-0x342402026000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x342402026000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x342402026000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console warning: [.WebGL-0x342402026000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 kpis: 3,668 | 834 | 1,069 | 10,351
 ships drawn: 5827
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/15/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/14/7.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/5/14/8.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/30/15.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/31/15.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/30/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/31/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/29/15.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/29/14.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/61/30.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/62/30.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/7/60/30.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/123/61.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/123/60.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/122/61.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/122/60.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/124/61.pbf net::ERR_ABORTED
-request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/8/124/60.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/32/15.pbf net::ERR_ABORTED
+request failed: https://tiles.openfreemap.org/planet/20260927_080001_pt/6/32/14.pbf net::ERR_ABORTED
 clicked moving ship: GRAND EXPLORER
-ship panel: × Cargo · MMSI 352005711 GRAND EXPLORER Under way at 7.3 knots, heading SE. Last seen Sun 4 Oct, 15:13 (40 min ago) 0 nautical miles sailed (3 days) 0 port calls this week – typical stay LATEST STOPS No stops recorded yet.
+ship panel: × Cargo · MMSI 352005711 GRAND EXPLORER Under way at 7.3 knots, heading SE. Last seen Sun 4 Oct, 15:13 (43 min ago) 0 nautical miles sailed (3 days) 0 port calls this week – typical stay LATEST STOPS No stops recorded yet.
 clicked port: null
 search "berg": Bergen Port | Bergsfjord Port | BERGENSFJORD Passenger & ferries | BERGE GALDHOPIGGEN Cargo | BERGFJORD Cargo | BERGEN TS Tanker | BERGEBUEN Fishing | BERG Passenger & ferries
 picked from search: Bergen
