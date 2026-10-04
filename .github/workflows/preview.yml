@@ -55,6 +55,9 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Probe
+        run: uv run python scripts/anomaly_probe.py && exit 1
+
       - name: Rebuild the Gold models the dashboard reads, if the branch changes them
         working-directory: dbt
         run: |
